@@ -68,3 +68,31 @@ resource "azurerm_linux_virtual_machine" "kali_vm" {
     name                 = "kali-osdisk"
   }
 }
+
+resource "azurerm_linux_virtual_machine" "ubuntu_vm" {
+  name = "ubuntu-vm"
+  location = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  size = "Standard_B2s"
+  admin_username = "azureuser"
+  disable_password_authentication = true
+  network_interface_ids = [azurerm_network_interface.ubuntu_nic.id]
+
+  admin_ssh_key {
+  username = "azureuser"
+  public_key = "ssh-rsa AAAA..." # your same public key
+  }
+
+  source_image_reference {
+  publisher = "Canonical"
+  offer = "0001-com-ubuntu-server-jammy"
+  sku = "22_04-lts-gen2"
+  version = "latest"
+  }
+
+  os_disk {
+  name = "ubuntu-osdisk"
+  caching = "ReadWrite"
+  storage_account_type = "Standard_LRS"
+  }
+}
