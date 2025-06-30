@@ -39,17 +39,16 @@ jobs:
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Wait for VM to be reachable
+      - name: Wait for VMs to be reachable
         run: sleep 30
 
       - name: Run Ansible playbook on Kali
         run: |
           ansible-playbook -i ansible/inventory.ini ansible/kali-playbook.yml --private-key key.pem
 
+      - name: Run Ansible playbook on Ubuntu
+        run: |
+          ansible-playbook -i ansible/inventory.ini ansible/ubuntu-playbook.yml --private-key key.pem
+
       - name: Cleanup SSH key file
         run: rm -f key.pem
-
-
-  - name: Cleanup SSH key file
-    run: rm -f key.pem
-
