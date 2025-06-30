@@ -1,1 +1,52 @@
+name: Deploy Basic Attack Simulation and Detection Lab
+
+on:
+push:
+branches: [ main ]
+workflow_dispatch:
+
+jobs:
+deploy:
+name: Deploy infrastructure and configure VMs
+runs-on: ubuntu-latest
+
+steps:
+  - name: Checkout repository
+    uses: actions/checkout@v4
+
+  - name: Set up Terraform
+    uses: hashicorp/setup-terraform@v3
+    with:
+      terraform_version: 1.7.5
+
+  - name: Terraform Init
+    run: terraform init
+    working-directory: terraform
+
+  - name: Terraform Apply
+    run: terraform apply -auto-approve
+    working-directory: terraform
+    env:
+      ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+      ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+      ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+
+  - name: Set up SSH key
+    run: |
+      echo "$SSH_PRIVATE_KEY" > key.pem
+      chmod 600 key.pem
+    env:
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+
+  - name: Wait for VM to be reachable
+    run: |
+      sleep 30
+
+  - name: Run Ansible playbook on Kali
+    run: |
+      ansible-playbook -i ansible/inventory.ini ansible/kali-playbook.yml --private-key key.pem
+
+  - name: Cleanup SSH key file
+    run: rm -f key.pem
 
