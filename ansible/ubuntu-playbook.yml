@@ -1,15 +1,15 @@
-name: Setup Ubuntu for monitoring
-hosts: ubuntu
-become: yes
-tasks:
+- name: Setup Ubuntu for monitoring
+  hosts: ubuntu
+  become: yes
+  tasks:
+    - name: Update apt
+      apt:
+        update_cache: yes
 
-name: Update apt
-apt: update_cache=yes
-
-name: Install monitoring tools
-apt:
-name:
-- wireshark
-- tcpdump
-- zeek
-state: present
+    - name: Install monitoring tools
+      apt:
+        name:
+          - wireshark
+          - tcpdump
+          - zeek
+        state: present
