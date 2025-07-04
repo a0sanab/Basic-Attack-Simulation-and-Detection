@@ -2,6 +2,13 @@
 
 This project provisions a basic cybersecurity lab in Azure using Terraform, configures it with Ansible, and deploys it automatically via GitHub Actions (CI/CD).
 
+### 🔧 What are Terraform, Ansible, and CI/CD?
+
+- **Terraform** is an Infrastructure as Code (IaC) tool that lets you define, create, and manage infrastructure on cloud platforms like Azure using simple configuration files.
+- **Ansible** is an automation tool used for configuring systems, installing software, and executing tasks across remote machines using playbooks (YAML files).
+- **CI/CD (Continuous Integration/Continuous Deployment)** is a software development practice that automates the integration and delivery of code and infrastructure, allowing for consistent, repeatable, and fast deployments.
+
+
 ---
 
 ## 📁 Project Structure
