@@ -6,7 +6,7 @@ This project provisions a basic cybersecurity lab in Azure using Terraform, conf
 
 - **Terraform** is an Infrastructure as Code (IaC) tool that lets you define, create, and manage infrastructure on cloud platforms like Azure using simple configuration files.
 - **Ansible** is an automation tool used for configuring systems, installing software, and executing tasks across remote machines using playbooks (YAML files).
-- **CI/CD (Continuous Integration/Continuous Deployment)** is a software development practice that automates the integration and delivery of code and infrastructure, allowing for consistent, repeatable, and fast deployments.
+- **CI/CD (Continuous Integration/Continuous Deployment)** is a software development practice that automates the integration and delivery of code and infrastructure, allowing for consistent, repeatable, and fast deployments. Here, GitHub Actions serves as our CI/CD orquestrator.
 
 
 ---
@@ -33,14 +33,37 @@ This project provisions a basic cybersecurity lab in Azure using Terraform, conf
 
 ---
 
-## 🚀 What It Does
+## 🚀 What happens when the workflow gets triggered?
 
-- Creates a resource group, virtual network, subnet, 2 public IPs, and 2 Linux VMs (Kali and Ubuntu) in Azure
-- Uses SSH key authentication (no passwords)
-- Kali: installs penetration tools (nmap, hping3, hydra)
-- Ubuntu: installs monitoring tools (wireshark, tcpdump, zeek)
-- Inventory file is generated dynamically
-- GitHub Actions workflow orchestrates everything automatically
+This project builds a fully functional cybersecurity lab in Azure consisting of a Kali Linux machine (for offensive tools) and an Ubuntu server (for monitoring tools). Here's a breakdown:
+
+### 🧱 Azure Infrastructure
+
+- **Resource Group:** A container that holds related Azure resources such as VMs, virtual networks, and public IPs. It's useful for managing permissions, billing, and cleanup.
+- **Virtual Network (VNet):** Provides an isolated and secure network environment in Azure where our VMs can communicate.
+- **Subnet:** A sub-section of a virtual network that allows you to segment the network logically. This is necessary to define IP ranges for VMs.
+- **Public IPs:** Each VM is assigned a dynamic public IP to be accessible remotely via SSH.
+- **Linux Virtual Machines:** One Kali and one Ubuntu VM, each with their own network interface and SSH access.
+
+### 🔒 Secure Authentication
+
+- SSH key-based login is used (no passwords)
+- Password authentication is explicitly disabled for security
+
+### ⚙️ VM Configuration with Ansible
+
+- **Kali VM:** Installs tools like `nmap`, `hping3`, and `hydra`
+- **Ubuntu VM:** Installs monitoring tools like `wireshark`, `tcpdump`, and `zeek`
+
+### 🔄 Automation Pipeline
+
+The GitHub Actions workflow performs the following:
+1. Initializes and applies Terraform to create infrastructure
+2. Retrieves public IPs from Terraform output
+3. Dynamically generates an Ansible inventory file
+4. Runs Ansible playbooks to configure both VMs
+5. Cleans up temporary SSH key from the runner
+
 
 ---
 
