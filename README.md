@@ -53,7 +53,7 @@ This project builds a fully functional cybersecurity lab in Azure consisting of 
 
 SSH key-based login is used.
 
-🔐**What Are SSH Key Pairs?**
+🔐 **What Are SSH Key Pairs?**
 
 An SSH key pair consists of two linked cryptographic files:
 
@@ -67,7 +67,7 @@ They work together like a lock and key:
 
 - Only your private key can “unlock” and log in.
 
-In our CI/CD setup:
+**In our CI/CD setup:**
 
 - We need a key pair. See here how to generate an SSH Key Pair.
 - Store the private key securely in GitHub Secrets (SSH_PRIVATE_KEY).
