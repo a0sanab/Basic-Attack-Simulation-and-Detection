@@ -1,13 +1,8 @@
 # 🛡️ Basic Attack Simulation and Detection Lab
 
-This project provisions a basic cybersecurity lab in Azure using Terraform, configures it with Ansible, and deploys it automatically via GitHub Actions (CI/CD).
-
-### 🔧 What are Terraform, Ansible, and CI/CD?
-
-- **Terraform** is an Infrastructure as Code (IaC) tool that lets you define, create, and manage infrastructure on cloud platforms like Azure using simple configuration files.
-- **Ansible** is an automation tool used for configuring systems, installing software, and executing tasks across remote machines using playbooks (YAML files).
-- **CI/CD (Continuous Integration/Continuous Deployment)** is a software development practice that automates the integration and delivery of code and infrastructure, allowing for consistent, repeatable, and fast deployments. Here, GitHub Actions serves as our CI/CD orquestrator.
-
+This project provisions a basic cybersecurity lab in Azure using Terraform to create the VMs, configures it with Ansible, and deploys it automatically via GitHub Actions (CI/CD).
+Part 1: Creating the infrastructure using a CI/CD pipeline or workflow.
+Part 2: Running basic attacks and documenting our findings.
 
 ---
 
@@ -32,6 +27,15 @@ This project provisions a basic cybersecurity lab in Azure using Terraform, conf
 ```
 
 ---
+### Part 1: Infrastructure and CI/CD workflow
+
+## 🔧 What are Terraform, Ansible, and CI/CD?
+
+- **Terraform** is an Infrastructure as Code (IaC) tool that lets you define, create, and manage infrastructure on cloud platforms like Azure using simple configuration files.
+- **Ansible** is an automation tool used for configuring systems, installing software, and executing tasks across remote machines using playbooks (YAML files).
+- **CI/CD (Continuous Integration/Continuous Deployment)** is a software development practice that automates the integration and delivery of code and infrastructure, allowing for consistent, repeatable, and fast deployments. Here, GitHub Actions serves as our CI/CD orquestrator.
+
+---
 
 ## 🚀 What happens when the workflow gets triggered?
 
@@ -47,8 +51,28 @@ This project builds a fully functional cybersecurity lab in Azure consisting of 
 
 ### 🔒 Secure Authentication
 
-- SSH key-based login is used (no passwords)
-- Password authentication is explicitly disabled for security
+SSH key-based login is used.
+
+🔐 What Are SSH Key Pairs?
+
+An SSH key pair consists of two linked cryptographic files:
+
+- Public key (e.g., id_rsa.pub): This is placed on the server (Azure VM).
+
+- Private key (e.g., id_rsa): This stays on your computer. You never share it.
+
+They work together like a lock and key:
+
+- The server “locks” access with the public key.
+
+- Only your private key can “unlock” and log in.
+
+In our CI/CD setup:
+
+- We need a key pair. See here how to generate an SSH Key Pair.
+- Store the private key securely in GitHub Secrets (SSH_PRIVATE_KEY).
+- Repalce the public key in `terraform.tfvars` with the new matching key.
+- Use Ansible and GitHub Actions to SSH into the VMs without exposing passwords.
 
 ### ⚙️ VM Configuration with Ansible
 
@@ -70,7 +94,8 @@ The GitHub Actions workflow performs the following:
 ## 🔑 Prerequisites
 
 - Azure subscription
-- A service principal with Contributor role
+- A service principal with Contributor role. See here how to generate a service principal on Azure.
+- An SSH Key Pair. See here how to generate an SSH Key Pair.
 - GitHub repository with the following secrets:
 
   - `ARM_CLIENT_ID`
@@ -131,10 +156,3 @@ The GitHub Actions workflow performs the following:
 
 ---
 
-## 📄 License
-
-MIT License
-
----
-
-Built with ❤️ for learning and experimentation in cloud cybersecurity
