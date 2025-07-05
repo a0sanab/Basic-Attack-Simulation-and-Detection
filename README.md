@@ -1,8 +1,8 @@
 # 🛡️ Basic Attack Simulation and Detection Lab
 
 This project provisions a basic cybersecurity lab in Azure using Terraform to create the VMs, configures it with Ansible, and deploys it automatically via GitHub Actions (CI/CD).
-- Part 1: Creating the infrastructure using a CI/CD pipeline or workflow.
-- Part 2: Running basic attacks and documenting our findings.
+- **Part 1:** Creating the infrastructure using a CI/CD pipeline or workflow.
+- **Part 2:** Running basic attacks and documenting our findings.
 
 ---
 
