@@ -27,9 +27,9 @@ Part 2: Running basic attacks and documenting our findings.
 ```
 
 ---
-### Part 1: Infrastructure and CI/CD workflow
+## Part 1: Infrastructure and CI/CD workflow
 
-## 🔧 What are Terraform, Ansible, and CI/CD?
+### 🔧 What are Terraform, Ansible, and CI/CD?
 
 - **Terraform** is an Infrastructure as Code (IaC) tool that lets you define, create, and manage infrastructure on cloud platforms like Azure using simple configuration files.
 - **Ansible** is an automation tool used for configuring systems, installing software, and executing tasks across remote machines using playbooks (YAML files).
