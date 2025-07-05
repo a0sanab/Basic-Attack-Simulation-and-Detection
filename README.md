@@ -37,7 +37,7 @@ Part 2: Running basic attacks and documenting our findings.
 
 ---
 
-## 🚀 What happens when the workflow gets triggered?
+### 🚀 What happens when the workflow gets triggered?
 
 This project builds a fully functional cybersecurity lab in Azure consisting of a Kali Linux machine (for offensive tools) and an Ubuntu server (for monitoring tools). Here's a breakdown:
 
