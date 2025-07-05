@@ -53,7 +53,7 @@ This project builds a fully functional cybersecurity lab in Azure consisting of 
 
 SSH key-based login is used.
 
-🔐** What Are SSH Key Pairs?**
+🔐**What Are SSH Key Pairs?**
 
 An SSH key pair consists of two linked cryptographic files:
 
