@@ -62,11 +62,13 @@ Declares the variables used throughout the Terraform configuration such as:
 - Resource group name
 - VM size and admin username
 - SSH public key
+
 These variables can be customized via `terraform.tfvars`.
 
 ##### `outputs.tf`
 Defines which values Terraform should return after applying the infrastructure. In this case:
 - Public IPs for the Kali and Ubuntu VMs
+
 These are used by the GitHub Actions workflow to dynamically generate an Ansible inventory.
 
 ### ⚙️ VM Configuration with Ansible
