@@ -1,7 +1,10 @@
 # 🛡️ Basic Attack Simulation and Detection Lab using CI/CD and IaC
 
-- **Part 1:** Creating the lab infrastructure in Azure using Terraform and Ansible, and deploying it automatically via GitHub Actions (CI/CD).
-- **Part 2:** Running basic attacks and documenting our findings.
+### 🛠️ Part 1:
+Creating the lab infrastructure in Azure using Terraform and Ansible, and deploying it automatically via GitHub Actions (CI/CD).
+
+### ⚔️ Part 2:
+Running basic attacks and documenting our findings.
 
 ---
 
@@ -21,7 +24,7 @@
 │   ├── kali-playbook.yml      # Ansible playbook for Kali VM
 │   ├── ubuntu-playbook.yml    # Ansible playbook for Ubuntu VM
 │   └── inventory.ini          # Populated dynamically by GitHub Actions
-├── .gitignore                 # Recommended: ignore key.pem
+├── .gitignore                 # Ignore key.pem
 └── README.md
 ```
 
@@ -132,25 +135,7 @@ A playbook that configures the **Ubuntu VM** with monitoring tools. It:
   - Install tools like `wireshark`, `tcpdump`, and `zeek`
 
 
----
-
-### 🚀 What happens when the workflow gets triggered?
-
-A fully functional cybersecurity lab in Azure consisting of a Kali Linux machine (for offensive tools) and an Ubuntu server (for monitoring tools) gets built. Here's a breakdown:
-
-### 🔄 Automation Pipeline
-
-The GitHub Actions workflow performs the following:
-1. Initializes and applies Terraform to create infrastructure
-2. Retrieves public IPs from Terraform output
-3. Dynamically generates an Ansible inventory file
-4. Runs Ansible playbooks to configure both VMs
-5. Cleans up temporary SSH key from the runner
-
-
-### 🔒 Secure Authentication
-
-SSH key-based login is used to access the VMs.
+### 🔒 SSH key-based login is used to access the VMs
 
 🔐 **What Are SSH Key Pairs?**
 
@@ -176,12 +161,29 @@ They work together like a lock and key:
 
 ---
 
+### 🚀 What happens when the workflow gets triggered?
+
+A fully functional cybersecurity lab in Azure consisting of a Kali Linux machine (for offensive tools) and an Ubuntu server (for monitoring tools) gets gets deployed on the configured Azure subscription.
+
+### 🔄 Automation Pipeline
+
+The `.github/workflows/deploy.yml` file defines a CI/CD pipeline that:
+1. Initializes and applies Terraform to create infrastructure
+2. Retrieves public IPs from Terraform output
+3. Dynamically generates an Ansible inventory file
+4. Runs Ansible playbooks to configure both VMs
+5. Cleans up temporary SSH key from the runner
+
+This allows for full automation of the infrastructure deployment and provisioning process with one GitHub Action run.
+
+---
+
 ## 🔑 Prerequisites
 
 - Azure subscription
 - A service principal with Contributor role. See here how to generate a service principal on Azure.
 - An SSH Key Pair. See here how to generate an SSH Key Pair.
-- GitHub repository with the following secrets:
+- GitHub repository with the following secrets (you get these by creating a service principal):
 
   - `ARM_CLIENT_ID`
   - `ARM_CLIENT_SECRET`
@@ -198,30 +200,6 @@ They work together like a lock and key:
 3. (Optional) Review or edit `terraform.tfvars` to adjust region, username, VM size, etc.
 4. Go to GitHub → Actions tab → Run the Deploy workflow manually
 
----
-
-## ⚙️ CI/CD Pipeline Flow
-
-1. Checkout repo
-2. Setup Terraform and run terraform init/apply
-3. Extract public IPs of both VMs using terraform output
-4. Generate ansible/inventory.ini dynamically
-5. Run Ansible playbooks to configure each VM
-6. Clean up SSH key from runner
-
----
-
-## 🧰 Tools Installed
-
-### Kali
-- nmap
-- hping3
-- hydra
-
-### Ubuntu
-- wireshark
-- tcpdump
-- zeek
 
 ---
 
