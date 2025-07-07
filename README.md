@@ -76,7 +76,7 @@ Defines which values Terraform should return after applying the infrastructure. 
 
 These are used by the GitHub Actions workflow to dynamically generate an Ansible inventory.
 
-
+##
 ### ⚙️ VM Configuration with Ansible
 - **Kali VM:**
   - `nmap` (for port scanning)
