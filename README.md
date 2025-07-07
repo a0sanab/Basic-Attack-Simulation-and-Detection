@@ -154,7 +154,7 @@ They work together like a lock and key:
 **In our CI/CD setup:**
 
 - We need a key pair. See here how to generate an SSH Key Pair.
-- Store the private key securely in GitHub Secrets (SSH_PRIVATE_KEY).
+- Store the private key securely in GitHub Secrets (`SSH_PRIVATE_KEY`).
 - Repalce the public key in `terraform.tfvars` with the new matching key.
 - Use Ansible and GitHub Actions to SSH into the VMs without exposing passwords.
 
