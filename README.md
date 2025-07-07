@@ -86,8 +86,8 @@ These are used by the GitHub Actions workflow to dynamically generate an Ansible
 ##### `inventory.ini`
 
 🧾**What is an Ansible Inventory?**
-An inventory file defines the hosts Ansible will connect to, how to reach them, and what login credentials or SSH settings to use. It is essentially a list of target hosts grouped by names.
-On this project, it is **generated dynamically** by the GitHub Actions workflow using the output IPs from Terraform.
+- An inventory file defines the hosts Ansible will connect to, how to reach them, and what login credentials or SSH settings to use. It is essentially a list of target hosts grouped by names.
+- On this project, it is **generated dynamically** by the GitHub Actions workflow using the output IPs from Terraform.
 
 Example format:
 ```
@@ -97,8 +97,8 @@ kali-vm ansible_host=xx.xx.xx.xx ansible_user=azureuser
 [ubuntu]
 ubuntu-vm ansible_host=yy.yy.yy.yy ansible_user=azureuser
 ```
-This allows Ansible to know which machines to target and how to connect (username and IP).
-💡 You can think of the inventory as the address book for Ansible.
+- This allows Ansible to know which machines to target and how to connect (username and IP).
+- 💡 You can think of the inventory as the address book for Ansible.
 
 
 📜**What is an Ansible Playbook?**
@@ -116,7 +116,7 @@ A playbook that configures the **Kali VM** with penetration testing tools. It:
   - Install tools like `nmap`, `hping3`, and `hydra`
 
 For example, this playbook says:
-“Connect to the hosts in the kali group, become root, and install nmap, hping3, and hydra.”
+- “Connect to the hosts in the kali group, become root, and install nmap, hping3, and hydra.”
 
 ##### `ubuntu-playbook.yml`
 A playbook that configures the **Ubuntu VM** with monitoring tools. It:
