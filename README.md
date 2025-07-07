@@ -48,7 +48,7 @@ Specifics (for better Azure credit optimization):
 
 #### 🗂️ Terraform File Overview
 
-##### `main.tf`
+#### `main.tf`
 This is the main configuration file where the infrastructure is declared. It defines:
 - **Resource Group:** A container that holds related Azure resources such as VMs, virtual networks, and public IPs. It's useful for managing permissions, billing, and cleanup.
 - **Virtual Network (VNet):** Provides an isolated and secure network environment in Azure where our VMs can communicate.
@@ -56,7 +56,8 @@ This is the main configuration file where the infrastructure is declared. It def
 - **Public IPs:** Each VM is assigned a dynamic public IP to be accessible remotely via SSH.
 - **Linux Virtual Machines:** One Kali and one Ubuntu VM, each with their own network interface and SSH access.
 
-##### `variables.tf`
+
+#### `variables.tf`
 Declares the variables used throughout the Terraform configuration such as:
 - Azure region
 - Resource group name
@@ -65,11 +66,13 @@ Declares the variables used throughout the Terraform configuration such as:
 
 These variables can be customized via `terraform.tfvars`.
 
-##### `outputs.tf`
+
+#### `outputs.tf`
 Defines which values Terraform should return after applying the infrastructure. In this case:
 - Public IPs for the Kali and Ubuntu VMs
 
 These are used by the GitHub Actions workflow to dynamically generate an Ansible inventory.
+
 
 ### ⚙️ VM Configuration with Ansible
 - **Kali VM:**
@@ -81,11 +84,12 @@ These are used by the GitHub Actions workflow to dynamically generate an Ansible
   - Monitoring tools:
     - `wireshark` 
     - `tcpdump` 
-    - `zeek` 
+    - `zeek`
+
 
 #### 🗂️ Ansible File Overview
 
-##### `inventory.ini`
+#### `inventory.ini`
 
 🧾**What is an Ansible Inventory?**
 - An inventory file defines the hosts Ansible will connect to, how to reach them, and what login credentials or SSH settings to use. It is essentially a list of target hosts grouped by names.
@@ -110,7 +114,7 @@ A playbook is a YAML file where you define the tasks (scripts) Ansible should ru
 - Tasks (like installing software, updating packages, configuring settings)
 - Options like privilege escalation (become: yes)
 
-##### `kali-playbook.yml`
+#### `kali-playbook.yml`
 A playbook that configures the **Kali VM** with penetration testing tools. It:
 - Connects to the host in the `[kali]` group
 - Uses `apt` to:
@@ -120,7 +124,7 @@ A playbook that configures the **Kali VM** with penetration testing tools. It:
 For example, this playbook says:
 - “Connect to the hosts in the kali group, become root, and install nmap, hping3, and hydra.”
 
-##### `ubuntu-playbook.yml`
+#### `ubuntu-playbook.yml`
 A playbook that configures the **Ubuntu VM** with monitoring tools. It:
 - Connects to the host in the `[ubuntu]` group
 - Uses `apt` to:
