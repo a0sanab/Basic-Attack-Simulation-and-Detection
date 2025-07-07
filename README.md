@@ -26,7 +26,7 @@
 ```
 
 ---
-## Part 1: Infrastructure and CI/CD workflow
+## 🛠️ Part 1: Infrastructure and CI/CD workflow
 
 ### 🔧 What are Terraform, Ansible, and CI/CD?
 
