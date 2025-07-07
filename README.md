@@ -110,9 +110,9 @@ ubuntu-vm ansible_host=yy.yy.yy.yy ansible_user=azureuser
 📜**What is an Ansible Playbook?**
 - A playbook is a YAML file where you define the tasks (scripts) Ansible should run on your servers. It contains:
 
-- The hosts (from the inventory group) to target
-- Tasks (like installing software, updating packages, configuring settings)
-- Options like privilege escalation (become: yes)
+  - The hosts (from the inventory group) to target
+  - Tasks (like installing software, updating packages, configuring settings)
+  - Options like privilege escalation (become: yes)
 
 #### `kali-playbook.yml`
 A playbook that configures the **Kali VM** with penetration testing tools. It:
