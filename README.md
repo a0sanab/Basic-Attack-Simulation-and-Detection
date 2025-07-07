@@ -1,4 +1,4 @@
-# 🛡️ Basic Attack Simulation and Detection Lab
+# 🛡️ Basic Attack Simulation and Detection Lab using CI/CD and IaC
 
 - **Part 1:** Creating the lab infrastructure in Azure using Terraform and Ansible, and deploying it automatically via GitHub Actions (CI/CD).
 - **Part 2:** Running basic attacks and documenting our findings.
@@ -34,13 +34,46 @@
 - **Ansible** is an automation tool used for configuring systems, installing software, and executing tasks across remote machines using playbooks (YAML files).
 - **CI/CD (Continuous Integration/Continuous Deployment)** is a software development practice that automates the integration and delivery of code and infrastructure, allowing for consistent, repeatable, and fast deployments. Here, GitHub Actions serves as our CI/CD orquestrator.
 
+### Here's a breakdown of what we'll be using for this lab:
+
+### 🖥️ VM Creation with Terraform:
+- 1 VM: Kali Linux (for offensive tools)
+- 1 VM: Ubuntu (for monitoring and packet capture)
+  
+Specifics (for better Azure credit optimization):
+- B1s (1vCPU, 1 GB RAM) for Ubuntu
+- B2s (2vCPU, 4 GB RAM) for Kali (for better performance)
+
+### ⚙️ VM Configuration with Ansible
+- **Kali VM:**
+  - `nmap` (for port scanning)
+  - `hping3` (for packet crafting/flooding)
+  - `hydra` (for brute-force testing)
+    
+- **Ubuntu VM:**
+  - Monitoring tools:
+    - `wireshark` 
+    - `tcpdump` 
+    - `zeek` 
+
 ---
 
 ### 🚀 What happens when the workflow gets triggered?
 
-This project builds a fully functional cybersecurity lab in Azure consisting of a Kali Linux machine (for offensive tools) and an Ubuntu server (for monitoring tools). Here's a breakdown:
+A fully functional cybersecurity lab in Azure consisting of a Kali Linux machine (for offensive tools) and an Ubuntu server (for monitoring tools) gets built. Here's a breakdown:
+
+### 🔄 Automation Pipeline
+
+The GitHub Actions workflow performs the following:
+1. Initializes and applies Terraform to create infrastructure
+2. Retrieves public IPs from Terraform output
+3. Dynamically generates an Ansible inventory file
+4. Runs Ansible playbooks to configure both VMs
+5. Cleans up temporary SSH key from the runner
 
 ### 🧱 Azure Infrastructure
+
+Here's some context of what you can expect to see while looking at the code provided in the repo:
 
 - **Resource Group:** A container that holds related Azure resources such as VMs, virtual networks, and public IPs. It's useful for managing permissions, billing, and cleanup.
 - **Virtual Network (VNet):** Provides an isolated and secure network environment in Azure where our VMs can communicate.
@@ -50,7 +83,7 @@ This project builds a fully functional cybersecurity lab in Azure consisting of 
 
 ### 🔒 Secure Authentication
 
-SSH key-based login is used.
+SSH key-based login is used to access the VMs.
 
 🔐 **What Are SSH Key Pairs?**
 
@@ -72,20 +105,6 @@ They work together like a lock and key:
 - Store the private key securely in GitHub Secrets (SSH_PRIVATE_KEY).
 - Repalce the public key in `terraform.tfvars` with the new matching key.
 - Use Ansible and GitHub Actions to SSH into the VMs without exposing passwords.
-
-### ⚙️ VM Configuration with Ansible
-
-- **Kali VM:** Installs tools like `nmap`, `hping3`, and `hydra`
-- **Ubuntu VM:** Installs monitoring tools like `wireshark`, `tcpdump`, and `zeek`
-
-### 🔄 Automation Pipeline
-
-The GitHub Actions workflow performs the following:
-1. Initializes and applies Terraform to create infrastructure
-2. Retrieves public IPs from Terraform output
-3. Dynamically generates an Ansible inventory file
-4. Runs Ansible playbooks to configure both VMs
-5. Cleans up temporary SSH key from the runner
 
 
 ---
