@@ -34,6 +34,8 @@
 - **Ansible** is an automation tool used for configuring systems, installing software, and executing tasks across remote machines using playbooks (YAML files).
 - **CI/CD (Continuous Integration/Continuous Deployment)** is a software development practice that automates the integration and delivery of code and infrastructure, allowing for consistent, repeatable, and fast deployments. Here, GitHub Actions serves as our CI/CD orquestrator.
 
+---
+
 ### Here's a breakdown of what we'll be using for this lab:
 
 ### 🖥️ VM Creation with Terraform:
@@ -43,6 +45,29 @@
 Specifics (for better Azure credit optimization):
 - B1s (1vCPU, 1 GB RAM) for Ubuntu
 - B2s (2vCPU, 4 GB RAM) for Kali (for better performance)
+
+#### 🗂️ Terraform File Overview
+
+##### `main.tf`
+This is the main configuration file where the infrastructure is declared. It defines:
+- **Resource Group:** A container that holds related Azure resources such as VMs, virtual networks, and public IPs. It's useful for managing permissions, billing, and cleanup.
+- **Virtual Network (VNet):** Provides an isolated and secure network environment in Azure where our VMs can communicate.
+- **Subnet:** A sub-section of a virtual network that allows you to segment the network logically. This is necessary to define IP ranges for VMs.
+- **Public IPs:** Each VM is assigned a dynamic public IP to be accessible remotely via SSH.
+- **Linux Virtual Machines:** One Kali and one Ubuntu VM, each with their own network interface and SSH access.
+
+##### `variables.tf`
+Declares the variables used throughout the Terraform configuration such as:
+- Azure region
+- Resource group name
+- VM size and admin username
+- SSH public key
+These variables can be customized via `terraform.tfvars`.
+
+##### `outputs.tf`
+Defines which values Terraform should return after applying the infrastructure. In this case:
+- Public IPs for the Kali and Ubuntu VMs
+These are used by the GitHub Actions workflow to dynamically generate an Ansible inventory.
 
 ### ⚙️ VM Configuration with Ansible
 - **Kali VM:**
@@ -55,6 +80,51 @@ Specifics (for better Azure credit optimization):
     - `wireshark` 
     - `tcpdump` 
     - `zeek` 
+
+#### 🗂️ Ansible File Overview
+
+##### `inventory.ini`
+
+🧾**What is an Ansible Inventory?**
+An inventory file defines the hosts Ansible will connect to, how to reach them, and what login credentials or SSH settings to use. It is essentially a list of target hosts grouped by names.
+On this project, it is **generated dynamically** by the GitHub Actions workflow using the output IPs from Terraform.
+
+Example format:
+```
+[kali]
+kali-vm ansible_host=xx.xx.xx.xx ansible_user=azureuser
+
+[ubuntu]
+ubuntu-vm ansible_host=yy.yy.yy.yy ansible_user=azureuser
+```
+This allows Ansible to know which machines to target and how to connect (username and IP).
+💡 You can think of the inventory as the address book for Ansible.
+
+
+📜**What is an Ansible Playbook?**
+A playbook is a YAML file where you define the tasks (scripts) Ansible should run on your servers. It contains:
+
+- The hosts (from the inventory group) to target
+- Tasks (like installing software, updating packages, configuring settings)
+- Options like privilege escalation (become: yes)
+
+##### `kali-playbook.yml`
+A playbook that configures the **Kali VM** with penetration testing tools. It:
+- Connects to the host in the `[kali]` group
+- Uses `apt` to:
+  - Update the package list
+  - Install tools like `nmap`, `hping3`, and `hydra`
+
+For example, this playbook says:
+“Connect to the hosts in the kali group, become root, and install nmap, hping3, and hydra.”
+
+##### `ubuntu-playbook.yml`
+A playbook that configures the **Ubuntu VM** with monitoring tools. It:
+- Connects to the host in the `[ubuntu]` group
+- Uses `apt` to:
+  - Update the package list
+  - Install tools like `wireshark`, `tcpdump`, and `zeek`
+
 
 ---
 
@@ -71,15 +141,6 @@ The GitHub Actions workflow performs the following:
 4. Runs Ansible playbooks to configure both VMs
 5. Cleans up temporary SSH key from the runner
 
-### 🧱 Azure Infrastructure
-
-Here's some context of what you can expect to see while looking at the code provided in the repo:
-
-- **Resource Group:** A container that holds related Azure resources such as VMs, virtual networks, and public IPs. It's useful for managing permissions, billing, and cleanup.
-- **Virtual Network (VNet):** Provides an isolated and secure network environment in Azure where our VMs can communicate.
-- **Subnet:** A sub-section of a virtual network that allows you to segment the network logically. This is necessary to define IP ranges for VMs.
-- **Public IPs:** Each VM is assigned a dynamic public IP to be accessible remotely via SSH.
-- **Linux Virtual Machines:** One Kali and one Ubuntu VM, each with their own network interface and SSH access.
 
 ### 🔒 Secure Authentication
 
