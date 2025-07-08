@@ -9,7 +9,9 @@ resource "azurerm_resource_group" "rg" {
 
 resource "azurerm_virtual_network" "vnet" {
   name                = var.vnet_name
-  address_space       = ["10.0.0.0/16"]
+
+  # This defines the entire private IP range that Azure can assign to devices (VMs for example) within this virtual network.
+  address_space       = ["10.0.0.0/16"] 
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
 }
@@ -18,6 +20,8 @@ resource "azurerm_subnet" "subnet" {
   name                 = var.subnet_name
   virtual_network_name = azurerm_virtual_network.vnet.name
   resource_group_name  = azurerm_resource_group.rg.name
+
+  # Here, we carve out a chunk of that whole address space, this subnet gives us 256 addresses (10.0.1.0 to 10.0.1.255)
   address_prefixes     = ["10.0.1.0/24"]
 }
 
