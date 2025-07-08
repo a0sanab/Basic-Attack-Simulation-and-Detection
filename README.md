@@ -74,7 +74,7 @@ This is the main configuration file where the infrastructure is declared. It def
     Each subnet gets its own range of IP addresses within the larger address space of the virtual network.
   
 - **Public IPs:** Each VM is assigned a dynamic public IP to be accessible remotely via SSH.
-- **Linux Virtual Machines:** One Kali and one Ubuntu VM, each with their own network interface and SSH access.
+- **Linux Virtual Machines:** One Kali and one Ubuntu VM, each with their own **network interface** (The NIC or Network Interface Card connects the VM to the virtual network and public IP.) and SSH access.
 
 
 #### `variables.tf`
