@@ -41,7 +41,10 @@ jobs:
 
       - name: Wait for VMs to be reachable
         run: sleep 30
-
+        
+      - name: Install Ansible
+        run: sudo apt-get update && sudo apt-get install -y ansible
+        
       - name: Generate dynamic Ansible inventory
         run: |
           echo "[kali]" > ansible/inventory.ini
