@@ -1,7 +1,7 @@
 # 🛡️ Basic Attack Simulation and Detection Lab using CI/CD and IaC
 
-### 🛠️ Part 1: Creating the lab infrastructure in Azure using Terraform and Ansible, and deploying it automatically via GitHub Actions (CI/CD).
-### ⚔️ Part 2: Running basic attacks and documenting our findings.
+**🛠️ Part 1:** Creating the lab infrastructure in Azure using Terraform and Ansible, and deploying it automatically via GitHub Actions (CI/CD).
+**⚔️ Part 2:** Running basic attacks and documenting our findings.
 
 ---
 
