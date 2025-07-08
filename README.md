@@ -66,10 +66,10 @@ This is the main configuration file where the infrastructure is declared. It def
     - A subnet is one street in that neighborhood — for example, 10.0.1.0/24 (256 IPs available).
   
     **IP Address Assignment:**
-      - Azure won’t assign IPs to VMs unless they belong to a subnet. It’s how Azure knows:
-        - What IP range to assign
-        - What security policies to enforce
-        - How to route traffic
+    - Azure won’t assign IPs to VMs unless they belong to a subnet. It’s how Azure knows:
+      - What IP range to assign
+      - What security policies to enforce
+      - How to route traffic
       
     Each subnet gets its own range of IP addresses within the larger address space of the virtual network.
   
