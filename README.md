@@ -59,7 +59,9 @@ This is the main configuration file where the infrastructure is declared. It def
     - Monitoring tools (Zeek) live inside the virtual network.
     - A VNet lets you control the security and visibility of network traffic, just like in a real SOC or data center.
       
-- **Subnet:** A smaller, more specific piece of a larger network (in this case, the Azure Virtual Network).This is necessary to define IP ranges for VMs.
+- **Subnet:** A smaller, more specific piece of a larger network (in this case, the Azure Virtual Network). This is necessary to define IP ranges for VMs.
+
+  **How are VNets and Subnets related?** 
   - The virtual network (VNet) is a big neighborhood — for example, 10.0.0.0/16 (65,536 IPs available).
   - A subnet is one street in that neighborhood — for example, 10.0.1.0/24 (256 IPs available).
 
