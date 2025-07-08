@@ -28,6 +28,7 @@ resource "azurerm_public_ip" "kali_ip" {
   allocation_method   = "Dynamic"
 }
 
+# The NIC (Network Interface Card) connects the VM to the virtual network and public IP.
 resource "azurerm_network_interface" "kali_nic" {
   name                = "kali-nic"
   location            = azurerm_resource_group.rg.location
