@@ -1,8 +1,6 @@
 name: Deploy Basic Attack Simulation and Detection Lab
 
 on:
-#  push:
-#    branches: [ main ]
   workflow_dispatch:
 
 jobs:
