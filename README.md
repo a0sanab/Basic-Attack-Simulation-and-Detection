@@ -39,8 +39,6 @@ Running basic attacks and documenting our findings.
 
 ---
 
-### Here's a breakdown of what we'll be using for this lab:
-
 ### 🖥️ VM Creation with Terraform:
 - 1 VM: Kali Linux (for offensive tools)
 - 1 VM: Ubuntu (for monitoring and packet capture)
