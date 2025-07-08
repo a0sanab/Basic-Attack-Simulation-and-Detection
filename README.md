@@ -107,7 +107,7 @@ These are used by the GitHub Actions workflow to dynamically generate an Ansible
     - `zeek`
 
 
-#### 🗂️ Ansible File Overview
+### 🗂️ Ansible File Overview
 
 #### `inventory.ini`
 
