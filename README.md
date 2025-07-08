@@ -53,7 +53,23 @@ Specifics (for better Azure credit optimization):
 This is the main configuration file where the infrastructure is declared. It defines:
 - **Resource Group:** A container that holds related Azure resources such as VMs, virtual networks, and public IPs. It's useful for managing permissions, billing, and cleanup.
 - **Virtual Network (VNet):** Provides an isolated and secure network environment in Azure where our VMs can communicate.
-- **Subnet:** A sub-section of a virtual network that allows you to segment the network logically. This is necessary to define IP ranges for VMs.
+   **Why do we need a VNet?:**
+    - To simulate attacks internally between VMs (Kali attacking Ubuntu), and we want that traffic to be isolated from the public internet.
+    - Monitoring tools (Zeek) live inside the virtual network.
+    - A VNet lets you control the security and visibility of network traffic, just like in a real SOC or data center.
+      
+- **Subnet:** A smaller, more specific piece of a larger network (in this case, the Azure Virtual Network).This is necessary to define IP ranges for VMs.
+  - The virtual network (VNet) is a big neighborhood — for example, 10.0.0.0/16 (65,536 IPs available).
+  - A subnet is one street in that neighborhood — for example, 10.0.1.0/24 (256 IPs available).
+
+  - **IP Address Assignment:**
+      - Azure won’t assign IPs to VMs unless they belong to a subnet. It’s how Azure knows:
+        - What IP range to assign
+        - What security policies to enforce
+        - How to route traffic
+    
+  Each subnet gets its own range of IP addresses within the larger address space of the virtual network.
+  
 - **Public IPs:** Each VM is assigned a dynamic public IP to be accessible remotely via SSH.
 - **Linux Virtual Machines:** One Kali and one Ubuntu VM, each with their own network interface and SSH access.
 
