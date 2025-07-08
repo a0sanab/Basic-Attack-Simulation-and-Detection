@@ -47,7 +47,7 @@ Specifics (for better Azure credit optimization):
 - B1s (1vCPU, 1 GB RAM) for Ubuntu
 - B2s (2vCPU, 4 GB RAM) for Kali (for better performance)
 
-#### 🗂️ Terraform File Overview
+### 🗂️ Terraform File Overview
 
 #### `main.tf`
 This is the main configuration file where the infrastructure is declared. It defines:
@@ -61,17 +61,17 @@ This is the main configuration file where the infrastructure is declared. It def
       
 - **Subnet:** A smaller, more specific piece of a larger network (in this case, the Azure Virtual Network). This is necessary to define IP ranges for VMs.
 
-  **How are VNets and Subnets related?** 
-  - The virtual network (VNet) is a big neighborhood — for example, 10.0.0.0/16 (65,536 IPs available).
-  - A subnet is one street in that neighborhood — for example, 10.0.1.0/24 (256 IPs available).
-
-  - **IP Address Assignment:**
+    **How are VNets and Subnets related?** 
+      - The virtual network (VNet) is a big neighborhood — for example, 10.0.0.0/16 (65,536 IPs available).
+      - A subnet is one street in that neighborhood — for example, 10.0.1.0/24 (256 IPs available).
+  
+    **IP Address Assignment:**
       - Azure won’t assign IPs to VMs unless they belong to a subnet. It’s how Azure knows:
         - What IP range to assign
         - What security policies to enforce
         - How to route traffic
-    
-  Each subnet gets its own range of IP addresses within the larger address space of the virtual network.
+      
+    Each subnet gets its own range of IP addresses within the larger address space of the virtual network.
   
 - **Public IPs:** Each VM is assigned a dynamic public IP to be accessible remotely via SSH.
 - **Linux Virtual Machines:** One Kali and one Ubuntu VM, each with their own network interface and SSH access.
