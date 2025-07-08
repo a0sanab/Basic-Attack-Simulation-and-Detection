@@ -53,6 +53,7 @@ Specifics (for better Azure credit optimization):
 This is the main configuration file where the infrastructure is declared. It defines:
 - **Resource Group:** A container that holds related Azure resources such as VMs, virtual networks, and public IPs. It's useful for managing permissions, billing, and cleanup.
 - **Virtual Network (VNet):** Provides an isolated and secure network environment in Azure where our VMs can communicate.
+  
    **Why do we need a VNet?:**
     - To simulate attacks internally between VMs (Kali attacking Ubuntu), and we want that traffic to be isolated from the public internet.
     - Monitoring tools (Zeek) live inside the virtual network.
