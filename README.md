@@ -40,6 +40,10 @@ Creating the lab infrastructure in Azure using Terraform and Ansible, and deploy
 
 ### 🖥️ VM Creation with Terraform:
 - 1 VM: Kali Linux (for offensive tools)
+  **🤔 Why Kali Linux?:**
+    - It's purpose is: offensive security, penetration testing, ethical hacking.
+    - Comes with many security tools pre-installed.
+    - It's common to use Kali as the attacker and Ubuntu as the target in cybersecurity projects or labs.
 - 1 VM: Ubuntu (for monitoring and packet capture)
   
 Specifics (for better Azure credit optimization):
