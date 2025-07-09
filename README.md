@@ -193,9 +193,11 @@ The `.github/workflows/deploy.yml` file defines a CI/CD pipeline that:
 
 This allows for full automation of the infrastructure deployment and provisioning process with one GitHub Action run.
 
+<details> <summary>🔽 Click here to view the deployment flow diagram</summary>
+
 ```mermaid
 graph TD
-  A[📦 Push or Trigger Workflow] --> B[🧲 GitHub Actions Workflow]
+  A[📦 Trigger Workflow] --> B[🧲 GitHub Actions Workflow]
   B --> C[☁️ Terraform: Provision Azure Resources]
   C --> D[📤 Terraform Outputs: Kali and Ubuntu Public IPs]
   D --> E[🗂️ Generate Ansible Inventory]
@@ -203,8 +205,7 @@ graph TD
   E --> G[📜 Ansible: Configure Ubuntu VM]
   F & G --> H[✅ Lab is Ready for Use]
 ```
-
-
+</details>
 ---
 
 ## 🔑 Prerequisites
