@@ -194,9 +194,6 @@ The `.github/workflows/deploy.yml` file defines a CI/CD pipeline that:
 This allows for full automation of the infrastructure deployment and provisioning process with one GitHub Action run.
 
 <details> <summary>🔽 Click to view deployment flow diagram</summary>
-mermaid
-Copy
-Edit
 graph TD
   A[📦 Push or Trigger Workflow] --> B[🧪 GitHub Actions Workflow]
   B --> C[☁️ Terraform: Provision Azure Resources]
