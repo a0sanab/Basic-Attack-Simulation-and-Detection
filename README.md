@@ -230,5 +230,23 @@ graph TD
 3. (Optional) Review or edit `terraform.tfvars` to adjust region, username, VM size, etc.
 4. Go to GitHub → Actions tab → Run the Deploy workflow manually
 
+---
+## 🛠️ Part 2: Simulating Attacks and Analyzing Traffic
+
+In this part, we leverage the infrastructure provisioned in Part 1 to simulate basic cyberattacks using Kali Linux and observe or analyze their impact using monitoring tools installed on the Ubuntu VM (Zeek, tcpdump, etc.).
+
+---
+
+### 🔨 Tools Involved
+  - On Kali Linux (Attacker):
+    - `nmap`: for port scanning
+    - `hping3`: for sending custom TCP/IP packets (e.g., SYN flood)
+    - `hydra`: for brute force attacks on services like SSH or FTP
+
+  - On Ubuntu (Monitor/Target):
+    - `tcpdump`: to capture raw packets
+    - `wireshark`: for analyzing captured traffic (GUI tool)
+    - `zeek`: for real-time analysis and logging of suspicious behavior
+
 
 
