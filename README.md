@@ -193,7 +193,7 @@ The `.github/workflows/deploy.yml` file defines a CI/CD pipeline that:
 
 This allows for full automation of the infrastructure deployment and provisioning process with one GitHub Action run.
 
-<details> <summary>🔽 <b><u>Click here to view the deployment flow diagram</u></b></summary>
+<details> <summary>🔽 <h6>Click here to view the deployment flow diagram</h6></summary>
 
 ```mermaid
 graph TD
