@@ -28,7 +28,7 @@ Creating the lab infrastructure in Azure using Terraform and Ansible, and deploy
 ```
 
 ---
-## 🛠️ Part 1: Infrastructure and CI/CD workflow
+## 🛠️ Part 1: Building the Cyber Lab Environment
 
 ### 🔧 What are Terraform, Ansible, and CI/CD?
 
