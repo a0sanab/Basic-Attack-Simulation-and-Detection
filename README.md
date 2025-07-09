@@ -196,8 +196,8 @@ This allows for full automation of the infrastructure deployment and provisionin
 
 ```mermaid
 graph TD
-  A[📦 Trigger Workflow] --> B[🧲 GitHub Actions Workflow]
-  B --> C[☁️ Terraform: Provision Azure Resources]
+  A[📦 Trigger the Workflow] --> B[🧲 GitHub Actions Workflow:]
+  B --> C[☁️ Terraform: Create Azure Resources]
   C --> D[📤 Terraform Outputs: Kali and Ubuntu Public IPs]
   D --> E[🗂️ Generate Ansible Inventory]
   E --> F[📜 Ansible: Configure Kali VM]
