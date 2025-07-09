@@ -217,22 +217,5 @@ This allows for full automation of the infrastructure deployment and provisionin
 3. (Optional) Review or edit `terraform.tfvars` to adjust region, username, VM size, etc.
 4. Go to GitHub → Actions tab → Run the Deploy workflow manually
 
-
----
-
-## 🔐 Security Notes
-
-- SSH key is handled securely via GitHub Secrets
-- Password authentication is disabled
-- Don't commit key.pem or sensitive files
-
----
-
-## 🛠 Future Improvements
-
-- Add NSG/firewall rules
-- Configure Zeek/Suricata with logging and dashboards
-- Enable alerts or logs shipping to a SIEM (like ELK)
-
 ---
 
