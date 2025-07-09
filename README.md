@@ -217,5 +217,5 @@ This allows for full automation of the infrastructure deployment and provisionin
 3. (Optional) Review or edit `terraform.tfvars` to adjust region, username, VM size, etc.
 4. Go to GitHub → Actions tab → Run the Deploy workflow manually
 
----
+
 
