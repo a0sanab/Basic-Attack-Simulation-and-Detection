@@ -239,7 +239,7 @@ graph TD
 ---
 ## 🛠️ Part 2: Simulating Attacks and Analyzing Traffic
 
-In this part, we leverage the infrastructure provisioned in Part 1 to simulate basic cyberattacks using Kali Linux and observe or analyze their impact using monitoring tools installed on the Ubuntu VM (Zeek, tcpdump, etc.).
+In this part, we use the infrastructure created in Part 1 to simulate basic cyberattacks using Kali Linux and analyze their impact using monitoring tools installed on the Ubuntu VM.
 
 ---
 
