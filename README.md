@@ -36,7 +36,7 @@ Creating the lab infrastructure in Azure using Terraform and Ansible, and deploy
 - **Ansible** is an automation tool used for configuring systems, installing software, and executing tasks across remote machines using playbooks (YAML files).
 - **CI/CD (Continuous Integration/Continuous Deployment)** is a software development practice that automates the integration and delivery of code and infrastructure, allowing for consistent, repeatable, and fast deployments. Here, GitHub Actions serves as our CI/CD orquestrator.
 
----
+##
 
 ### 🖥️ VM Creation with Terraform:
 - 1 VM: Kali Linux (for offensive tools)
@@ -239,9 +239,9 @@ graph TD
 ---
 ## 🛠️ Part 2: Simulating Attacks and Analyzing Traffic
 
-In this part, we use the infrastructure created in Part 1 to simulate basic cyberattacks using Kali Linux and analyze their impact using monitoring tools installed on the Ubuntu VM.
+In this part, we use the infrastructure created in Part 1 to simulate basic cyberattacks using the Kali Linux VM and analyze their impact using monitoring tools installed on the Ubuntu VM.
 
----
+##
 
 ### 🔨 Tools Involved
   - On Kali Linux (Attacker):
