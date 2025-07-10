@@ -254,5 +254,29 @@ In this part, we use the infrastructure created in Part 1 to simulate basic cybe
     - `wireshark`: for analyzing captured traffic (GUI tool)
     - `zeek`: for real-time analysis and logging of suspicious behavior
 
+##
+
+### ⚔️ Attack Scenarios
+
+### 🕵️‍♀️ 1. Port Scanning using Nmap
+
+#### What is port scanning?:
+- It's a method used to discover open ports and services on a target system or network. It involves sending packets to various ports to determine which ones are open and listening, providing attackers with information to exploit vulnerabilities. 
+
+#### What is nmap?:
+- Nmap, short for Network Mapper, is a powerful open-source network scanning tool used primarily for: host discovery, port scanning, OS and service detection.
+  
+  - **Port Scanning:** Nmap uses raw IP packets (a packet of data that includes the IP header and the actual data being sent, but isn't encapsulated by any transport-layer protocol like TCP or UDP) to scan for open ports, which can be used to understand which services are available and potentially vulnerable.  
+
+
+
+
+
+
+
+
+
+
+
 
 
