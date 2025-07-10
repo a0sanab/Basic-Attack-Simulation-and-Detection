@@ -1,5 +1,4 @@
 # 🛡️ Basic Attack Simulation and Detection Lab using CI/CD and IaC
----
 
 ### 🛠️ Part 1: Building the Cyber Lab Environment
 Creating the lab infrastructure in Azure using Terraform and Ansible, and deploying it automatically via GitHub Actions (CI/CD).
