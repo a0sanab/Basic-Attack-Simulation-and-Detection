@@ -269,11 +269,11 @@ It's a method used to discover open ports and services on a target system or net
 
 ### 🤝 The TCP Handshake 
 To understand how TCP Connect and SYN scans work, it’s important to know how a typical TCP connection is established. It´s purpose is to establish a reliable connection between a client and a server to ensure that both sides are ready to communicate before any data is transmitted. This process is also known as the 3-way handshake:
-1. **SYN (Synchronize)  →**  The client sends a SYN packet to the server to request a connection.
+**1. SYN (Synchronize)  →**  The client sends a SYN packet to the server to request a connection.
    
-2. **SYN-ACK (Synchronize-Acknowledge)  →**  If the port is open, the server responds with a SYN-ACK.  The ACK flag acknowledges the client's initial SYN, and the SYN flag initiates the server's connection request back to the client.
+**2. SYN-ACK (Synchronize-Acknowledge)  →**  If the port is open, the server responds with a SYN-ACK.  The ACK flag acknowledges the client's initial SYN, and the SYN flag initiates the server's connection request back to the client.
    
-3. **ACK (Acknowledge) →**  The client sends back an ACK, acknowledging the server's SYN-ACK to complete the handshake. Both client and server are now aware of the connection and ready to transmit data.
+**3. ACK (Acknowledge) →**  The client sends back an ACK, acknowledging the server's SYN-ACK to complete the handshake. Both client and server are now aware of the connection and ready to transmit data.
 
 - 💡 If any of these steps fail, the connection does not fully establish. This behavior is what scanners like nmap exploit to detect open, closed, or filtered ports.
 
