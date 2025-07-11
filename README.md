@@ -243,7 +243,7 @@ In this part, we use the infrastructure created in Part 1 to simulate basic cybe
 
 ---
 
-### 🔨 Tools Involved
+### 🧰 Tools Involved
   - On Kali Linux (Attacker):
     - `nmap`: for port scanning
     - `hping3`: for sending custom TCP/IP packets (e.g., SYN flood)
@@ -256,7 +256,7 @@ In this part, we use the infrastructure created in Part 1 to simulate basic cybe
 
 ---
 
-### ⚔️ Attack Scenarios
+## ⚔️ Attack Scenarios
 ##
 
 ### 🕵️‍♀️ 1. Port Scanning using Nmap
