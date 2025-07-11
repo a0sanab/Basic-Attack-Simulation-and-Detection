@@ -214,7 +214,7 @@ graph TD
 
 ---
 
-## 🔑 Prerequisites
+### 🔑 Prerequisites
 
 - Azure subscription
 - A service principal with Contributor role. See here how to generate a service principal on Azure.
@@ -229,7 +229,7 @@ graph TD
 
 ---
 
-## 🧪 Run the Lab
+### 🧪 Create the lab
 
 1. Fork this repository
 2. Add the GitHub Secrets listed above
@@ -254,19 +254,55 @@ In this part, we use the infrastructure created in Part 1 to simulate basic cybe
     - `wireshark`: for analyzing captured traffic (GUI tool)
     - `zeek`: for real-time analysis and logging of suspicious behavior
 
-##
+---
 
 ### ⚔️ Attack Scenarios
 
 ### 🕵️‍♀️ 1. Port Scanning using Nmap
 
-#### What is port scanning?:
-- It's a method used to discover open ports and services on a target system or network. It involves sending packets to various ports to determine which ones are open and listening, providing attackers with information to exploit vulnerabilities. 
+### 🔍 Port Scanning 
+One of the most fundamental reconnaissance techniques is port scanning. We use `nmap` to detect which ports are open on the target VM.
 
-#### What is nmap?:
-- Nmap, short for Network Mapper, is a powerful open-source network scanning tool used primarily for: host discovery, port scanning, OS and service detection.
-  
-  - **Port Scanning:** Nmap uses raw IP packets (a packet of data that includes the IP header and the actual data being sent, but isn't encapsulated by any transport-layer protocol like TCP or UDP) to scan for open ports, which can be used to understand which services are available and potentially vulnerable.  
+#### What is port scanning?:
+It's a method used to discover open ports and services on a target system or network. It involves sending packets to various ports to determine which ones are open and listening, providing attackers with information to exploit vulnerabilities. 
+
+#### 🤝 The TCP Handshake 
+To understand how TCP Connect and SYN scans work, it’s important to know how a typical TCP connection is established. It´s purpose is to establish a reliable connection between a client and a server to ensure that both sides are ready to communicate before any data is transmitted. This process is also known as the 3-way handshake:
+
+1.  **SYN (Synchronize)  →** The client sends a SYN packet to the server to request a connection.
+
+2.  **SYN-ACK (Synchronize-Acknowledge)  →** If the port is open, the server responds with a SYN-ACK.  The ACK flag acknowledges the client's initial SYN, and the SYN flag initiates the server's connection request back to the client.
+
+3.  **ACK (Acknowledge) →** The client sends back an ACK, acknowledging the server's SYN-ACK to complete the handshake. Both client and server are now aware of the connection and ready to transmit data.
+
+- 💡 If any of these steps fail, the connection does not fully establish. This behavior is what scanners like nmap exploit to detect open, closed, or filtered ports.
+
+#### What is Nmap?:
+`nmap`, short for Network Mapper, is a powerful open-source network discovery and scanning tool used primarily for: host discovery, port scanning, OS and service detection.
+
+### 🔍 TCP Port Scanning Techniques
+
+#### 👣 TCP Connect Scan (-sT option)
+
+* Performs a full 3-way handshake (SYN → SYN-ACK → ACK).
+* Uses the operating system’s network stack (the part of the OS that's in charge of network communication). This means that the OS handles:
+  * Sending the SYN packet
+  * Receiving the SYN-ACK
+  * Sending the ACK to complete the handshake
+  * Keeping the connection open or closing it cleanly
+    
+  **Why this matters?:**
+  Using the OS's network stack is considered normal TCP behavior. It's easier but more detectable (leaves logs).
+
+* If the port is open, the connection is fully established, and then closed.
+
+✅ **Pros:**
+
+* Does not require root privileges.
+
+❌ **Cons:**
+
+* Loud and easily logged.
 
 
 
