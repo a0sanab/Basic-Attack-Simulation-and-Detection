@@ -251,8 +251,21 @@ In this part, we use the infrastructure created in Part 1 to simulate basic cybe
 
   - On Ubuntu (Monitor/Target):
     - `tcpdump`: to capture raw packets
-    - `wireshark`: for analyzing captured traffic (GUI tool)
+    - `wireshark`: for analyzing captured traffic 
     - `zeek`: for real-time analysis and logging of suspicious behavior
+    
+    #### 🛡️ Monitoring tools breakdown:
+
+    #### `tcpdump` :
+    - It's a command-line tool for capturing and inspecting network traffic in real time.
+    - It listens on a network interface (e.g., eth0) and prints out packet information as it sees it. We can use filters (like port numbers, protocols, IPs) to focus on specific traffic or output to `.pcap` files for deeper analysis later.
+
+    #### `wireshark` :
+    - It's a open-source network protocol analyzer. It captures and displays packets of data that flow through a network, allowing you to inspect what’s happening at a very detailed level (from the Ethernet frame all the way up to the application data).
+    - **GUI for Packet Analysis:** We can visually analyze the `.pcap` files generated using `tcpdump`, for example.
+
+
+    #### `zeek` :
 
 ---
 
@@ -281,6 +294,7 @@ To understand how TCP Connect and SYN scans work, it’s important to know how a
 `nmap`, short for Network Mapper, is a powerful open-source network discovery and scanning tool used primarily for: host discovery, port scanning, OS and service detection.
 
 ##
+
 ### 🔍 TCP Port Scanning Techniques
 
 #### 👣 TCP Connect Scan (-sT option in Nmap)
@@ -307,13 +321,13 @@ To understand how TCP Connect and SYN scans work, it’s important to know how a
 ##
 #### 🕵️ TCP SYN Scan (-sS option in Nmap)
 
-This is known as a half-open scan or stealth scan:
+This is also known as a **half-open scan or stealth scan**:
 
 - Nmap sends a SYN packet.
 - If the port is open, the server replies with a SYN-ACK.
 - But instead of replying with an ACK (step 3, to complete the handshake), Nmap sends an RST (reset) to tear down the connection immediately.
 
-So the connection is never fully established — only the SYN → SYN-ACK part happens.
+So the connection is never fully established, only the SYN → SYN-ACK part happens.
 
 **Advantages:**
 - Stealthier: It doesn’t complete the handshake, so it’s less likely to be logged or trigger alarms.
@@ -336,6 +350,13 @@ A “raw packet” is a network packet that is created and sent manually, rather
 - Sends the packet over the network without letting the OS manage the connection
 
 💡 Powerful but requires admin/root privileges. It's used for stealthy port scanning, custom attack simulations and penetration testing.
+
+##
+### 🧪 TCP Port Scan Comparison: TCP Connect vs. TCP SYN Scan
+
+Now, we’ll run two types of scans from the Kali VM to the Ubuntu VM and compare how they look from both the attacker's and defender's / victim's perspectives.
+
+### 
 
 
 
