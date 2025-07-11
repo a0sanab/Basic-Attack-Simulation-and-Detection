@@ -257,7 +257,6 @@ In this part, we use the infrastructure created in Part 1 to simulate basic cybe
 ---
 
 ## ⚔️ Attack Scenarios
-##
 
 ### 🕵️‍♀️ 1. Port Scanning using Nmap
 
