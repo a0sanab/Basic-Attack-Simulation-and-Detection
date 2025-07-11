@@ -266,7 +266,7 @@ One of the most fundamental reconnaissance techniques is port scanning. We use `
 
 #### What is port scanning?:
 It's a method used to discover open ports and services on a target system or network. It involves sending packets to various ports to determine which ones are open and listening, providing attackers with information to exploit vulnerabilities. 
-
+##
 ### 🤝 The TCP Handshake 
 To understand how TCP Connect and SYN scans work, it’s important to know how a typical TCP connection is established. It´s purpose is to establish a reliable connection between a client and a server to ensure that both sides are ready to communicate before any data is transmitted. This process is also known as the 3-way handshake:
 
@@ -277,10 +277,11 @@ To understand how TCP Connect and SYN scans work, it’s important to know how a
 **3.  ACK (Acknowledge) →** The client sends back an ACK, acknowledging the server's SYN-ACK to complete the handshake. Both client and server are now aware of the connection and ready to transmit data.
 
 - 💡 If any of these steps fail, the connection does not fully establish. This behavior is what scanners like nmap exploit to detect open, closed, or filtered ports.
-
+##
 #### What is Nmap?:
 `nmap`, short for Network Mapper, is a powerful open-source network discovery and scanning tool used primarily for: host discovery, port scanning, OS and service detection.
 
+##
 ### 🔍 TCP Port Scanning Techniques
 
 #### 👣 TCP Connect Scan (-sT option in Nmap)
