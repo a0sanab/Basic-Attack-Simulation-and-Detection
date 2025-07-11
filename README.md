@@ -297,10 +297,10 @@ To understand how TCP Connect and SYN scans work, it’s important to know how a
 
 - If the port is open, the connection is fully established, and then closed.
 
-✅ **Pros:**
+**Advantages:**
 - Does not require root privileges because we're not using raw packets (the OS's network stack handles the packets).
 
-❌ **Cons:**
+**Disadvantages:**
 - Easy to detect by firewalls and intrusion detection systems (IDS), because it behaves like normal traffic.
 - Leaves logs on the target system (because the connection is fully established and closed).
 
@@ -315,12 +315,28 @@ This is known as a half-open scan or stealth scan:
 
 So the connection is never fully established — only the SYN → SYN-ACK part happens.
 
-✅ **Pros:**
+**Advantages:**
 - Stealthier: It doesn’t complete the handshake, so it’s less likely to be logged or trigger alarms.
 - Faster and more efficient than a full TCP connection.
 
-❌ **Cons:**
+**Disadvantages:**
 - Requires root privileges (or admin on Windows) because it needs to craft raw packets.
+
+##
+
+#### What are Raw Packets?:
+A “raw packet” is a network packet that is created and sent manually, rather than being constructed automatically by the operating system’s networking stack. 
+
+**With raw packets, a program:**
+
+- Manually creates its own packet from scratch (or with special tools)
+
+- Sets flags like SYN, ACK, etc.
+
+- Sends the packet over the network without letting the OS manage the connection
+
+💡 Powerful but requires admin/root privileges. It's used for stealthy port scanning, custom attack simulations and penetration testing.
+
 
 
 
