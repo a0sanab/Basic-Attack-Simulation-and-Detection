@@ -292,13 +292,13 @@ To understand how TCP Connect and SYN scans work, it’s important to know how a
   - Sending the ACK to complete the handshake
   - Keeping the connection open or closing it cleanly
     
-  **Why this matters?:**
+  **Why does this matter?:**
   - Using the OS's network stack is considered normal TCP behavior. It's easier but more detectable (leaves logs).
 
 - If the port is open, the connection is fully established, and then closed.
 
 ✅ **Pros:**
-- Does not require root privileges because we're not using raw packets.
+- Does not require root privileges because we're not using raw packets (the OS's network stack handles the packets).
 
 ❌ **Cons:**
 - Easy to detect by firewalls and intrusion detection systems (IDS), because it behaves like normal traffic.
@@ -311,7 +311,7 @@ This is known as a half-open scan or stealth scan:
 
 - Nmap sends a SYN packet.
 - If the port is open, the server replies with a SYN-ACK.
-- But instead of replying with an ACK (step 3 of the handshake), Nmap sends an RST (reset) to tear down the connection immediately.
+- But instead of replying with an ACK (step 3, to complete the handshake), Nmap sends an RST (reset) to tear down the connection immediately.
 
 So the connection is never fully established — only the SYN → SYN-ACK part happens.
 
