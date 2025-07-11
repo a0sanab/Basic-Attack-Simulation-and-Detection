@@ -304,6 +304,7 @@ To understand how TCP Connect and SYN scans work, it’s important to know how a
 - Easy to detect by firewalls and intrusion detection systems (IDS), because it behaves like normal traffic.
 - Leaves logs on the target system (because the connection is fully established and closed).
 
+##
 #### 🕵️ TCP SYN Scan (-sS option in Nmap)
 
 This is known as a half-open scan or stealth scan:
