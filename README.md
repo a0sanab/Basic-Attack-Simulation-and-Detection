@@ -241,7 +241,7 @@ graph TD
 
 In this part, we use the infrastructure created in Part 1 to simulate basic cyberattacks using the Kali Linux VM and analyze their impact using monitoring tools installed on the Ubuntu VM.
 
-##
+---
 
 ### 🔨 Tools Involved
   - On Kali Linux (Attacker):
@@ -257,6 +257,7 @@ In this part, we use the infrastructure created in Part 1 to simulate basic cybe
 ---
 
 ### ⚔️ Attack Scenarios
+##
 
 ### 🕵️‍♀️ 1. Port Scanning using Nmap
 
@@ -269,11 +270,11 @@ It's a method used to discover open ports and services on a target system or net
 #### 🤝 The TCP Handshake 
 To understand how TCP Connect and SYN scans work, it’s important to know how a typical TCP connection is established. It´s purpose is to establish a reliable connection between a client and a server to ensure that both sides are ready to communicate before any data is transmitted. This process is also known as the 3-way handshake:
 
-1.  **SYN (Synchronize)  →** The client sends a SYN packet to the server to request a connection.
+1. **SYN (Synchronize)  →** The client sends a SYN packet to the server to request a connection.
 
-2.  **SYN-ACK (Synchronize-Acknowledge)  →** If the port is open, the server responds with a SYN-ACK.  The ACK flag acknowledges the client's initial SYN, and the SYN flag initiates the server's connection request back to the client.
+2. **SYN-ACK (Synchronize-Acknowledge)  →** If the port is open, the server responds with a SYN-ACK.  The ACK flag acknowledges the client's initial SYN, and the SYN flag initiates the server's connection request back to the client.
 
-3.  **ACK (Acknowledge) →** The client sends back an ACK, acknowledging the server's SYN-ACK to complete the handshake. Both client and server are now aware of the connection and ready to transmit data.
+3. **ACK (Acknowledge) →** The client sends back an ACK, acknowledging the server's SYN-ACK to complete the handshake. Both client and server are now aware of the connection and ready to transmit data.
 
 - 💡 If any of these steps fail, the connection does not fully establish. This behavior is what scanners like nmap exploit to detect open, closed, or filtered ports.
 
@@ -284,25 +285,23 @@ To understand how TCP Connect and SYN scans work, it’s important to know how a
 
 #### 👣 TCP Connect Scan (-sT option)
 
-* Performs a full 3-way handshake (SYN → SYN-ACK → ACK).
-* Uses the operating system’s network stack (the part of the OS that's in charge of network communication). This means that the OS handles:
-  * Sending the SYN packet
-  * Receiving the SYN-ACK
-  * Sending the ACK to complete the handshake
-  * Keeping the connection open or closing it cleanly
+- Performs a full 3-way handshake (SYN → SYN-ACK → ACK).
+- Uses the operating system’s network stack (the part of the OS that's in charge of network communication). This means that the OS handles:
+  - Sending the SYN packet
+  - Receiving the SYN-ACK
+  - Sending the ACK to complete the handshake
+  - Keeping the connection open or closing it cleanly
     
   **Why this matters?:**
-  Using the OS's network stack is considered normal TCP behavior. It's easier but more detectable (leaves logs).
+  - Using the OS's network stack is considered normal TCP behavior. It's easier but more detectable (leaves logs).
 
-* If the port is open, the connection is fully established, and then closed.
+- If the port is open, the connection is fully established, and then closed.
 
 ✅ **Pros:**
-
-* Does not require root privileges.
+- Does not require root privileges.
 
 ❌ **Cons:**
-
-* Loud and easily logged.
+- Loud and easily logged.
 
 
 
