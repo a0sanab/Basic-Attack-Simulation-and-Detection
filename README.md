@@ -279,7 +279,7 @@ One of the most fundamental reconnaissance techniques is port scanning. We use `
 It's a method used to discover open ports and services on a target system or network. It involves sending packets to various ports to determine which ones are open and listening, providing attackers with information to exploit vulnerabilities. 
 ##
 ### 🤝 The TCP Handshake 
-To understand how TCP Connect and SYN scans work, it’s important to know how a typical TCP connection is established. It´s purpose is to establish a reliable connection between a client and a server to ensure that both sides are ready to communicate before any data is transmitted. This process is also known as the 3-way handshake:
+To understand how TCP Connect and SYN scans work, it’s important to know how a typical TCP connection is established. It´s purpose is to establish a reliable connection between a client and a server to ensure that both sides are ready to communicate before any data is transmitted. This process is also known as the **3-way handshake**:
 
 **1. SYN (Synchronize)  →** The client sends a SYN packet to the server to request a connection.
    
@@ -298,7 +298,7 @@ To understand how TCP Connect and SYN scans work, it’s important to know how a
 
 #### 👣 TCP Connect Scan (-sT option in Nmap)
 
-- Performs a full 3-way handshake (SYN → SYN-ACK → ACK).
+- Performs a full 3-way handshake **(SYN → SYN-ACK → ACK)**.
 - Uses the operating system’s network stack (the part of the OS that's in charge of network communication). This means that the OS handles:
   - Sending the SYN packet
   - Receiving the SYN-ACK
@@ -326,7 +326,7 @@ This is also known as a **half-open scan or stealth scan**:
 - If the port is open, the server replies with a SYN-ACK.
 - But instead of replying with an ACK (step 3, to complete the handshake), Nmap sends an RST (reset) to tear down the connection immediately.
 
-So the connection is never fully established, only the SYN → SYN-ACK part happens.
+So the connection is never fully established, only the **SYN → SYN-ACK** part happens.
 
 **Advantages:**
 - Stealthier: It doesn’t complete the handshake, so it’s less likely to be logged or trigger alarms.
@@ -353,9 +353,61 @@ A “raw packet” is a network packet that is created and sent manually, rather
 ##
 ### 🧪 TCP Port Scan Comparison: TCP Connect vs. TCP SYN Scan
 
-Now, we’ll run two types of scans from the Kali VM to the Ubuntu VM and compare how they look from both the attacker's and defender's / victim's perspectives.
+Now, we’ll run two types of scans from the Kali VM to the Ubuntu VM and compare how they look from both the attacker's and defender's / targets's perspectives.
 
-### 
+The goal here is to simulate reconnaissance activity (what an attacker might do to fingerprint open services on a target) and analyze the traces that these two scans leave on the target machine.
+
+Reconnaissance in cybersecurity would be considered one of the first phases of an attack because it relies heavily on information gathering.
+
+### 🔬 Setup
+
+- On Ubuntu (target/monitoring VM), we open a terminal and run:
+
+  `
+  sudo tcpdump -i eth0 -w tcp_scan.pcap
+  `
+
+  **What this does:**
+
+  - `-i eth0` → Listen on interface **eth0** (the VM’s main network interface. We can always check using `ip link` or `ifconfig`, to be sure which one is actively transmitting and receiving data).
+
+  - `-w scan_test.pcap` → Write the raw captured packets directly to a file named `tcp_scan.pcap` .
+
+  - No filters applied → Captures all traffic on that interface.
+
+- Zeek passively monitors the network interface and it's logs will be written to:
+
+  `
+  /opt/zeek/logs/current/conn.log
+  `
+##
+
+### 1️⃣ TCP Connect Scan
+
+
+- On the Kali VM, we run the following command:
+
+  `
+  nmap -sT 10.0.1.X
+  `
+
+  **What this does:**
+  - `-sT` is the option used on Nmap to perform a TCP Connect Scan on the target IP address or hostname.
+
+ `10.0.1.X` is the private IP address of the Ubuntu VM.
+
+### 📋 Results and Analysis:
+
+**On Kali:**
+- Nmap performed a full 3-way handshake to check which ports are open.
+- Output:
+
+**On Ubuntu:**
+- Let's check Zeek's logs: 
+
+ `conn.log`
+
+ - We'll check the `tcp_scan.pcap` file on Wireshark GUI 
 
 
 
