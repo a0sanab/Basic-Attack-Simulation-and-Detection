@@ -390,7 +390,7 @@ Now, we’ll run two types of scans from the Kali VM to the Ubuntu VM and compar
 
 The goal here is to simulate reconnaissance activity (what an attacker might do to fingerprint open services on a target) and analyze the traces that these two scans leave on the target machine.
 
-Reconnaissance in cybersecurity would be considered one of the first phases of an attack because it relies heavily on information gathering.
+In cybersecurity, reconnaissance is typically the first phase of an attack, as it focuses on gathering information about the target system or network.
 
 
 ##
@@ -422,12 +422,15 @@ Reconnaissance in cybersecurity would be considered one of the first phases of a
   - Zeek passively monitors the network interface.
   - It will start logging immediately in the default directory (`/opt/zeek/logs/current/`).
 
-  
+- To see the log as it grows on real time, we can run on another terminal:
+  ```
+  tail -f /opt/zeek/logs/current/conn.log
+  ```
   
 ##
 #### 🔎 Performing the Scan
 
-- On a terminal connected to the Kali VM, we run the following command:
+- On a terminal connected to the Kali VM, run the following command:
 
   ```
   nmap -sT 10.0.1.X
@@ -436,13 +439,14 @@ Reconnaissance in cybersecurity would be considered one of the first phases of a
   **What this does:**
   - `-sT` is the option used on Nmap to perform a **TCP Connect Scan** on the target IP address or hostname.
 
- `10.0.1.X` is the private IP address of the Ubuntu VM.
+ `10.0.1.X` is the private IP address of the Ubuntu VM (use `ip a` or check Azure Networking tab).
+
 
 ##
 
-### 📋 Results and Analysis:
+#### 📋 Results and Analysis:
 
-- Stop Zeek and tcpdump using `Ctrl + C` to be able to have isolated evidence per scan or attack, that way it´s easier to analyze the logs.
+- Stop Zeek and tcpdump using `Ctrl + C` to have isolated evidence per scan or attack, that way the logs are clearer.
 
 **On Kali:**
 - Nmap performed a full 3-way handshake to check which ports are open. 
@@ -450,15 +454,90 @@ Reconnaissance in cybersecurity would be considered one of the first phases of a
 - Output:
 
 **On Ubuntu:**
-- Let's check Zeek's logs: `conn.log`
+- To print Zeek's log run: 
+  ```
+  cat /opt/zeek/logs/current/conn.log
+  ```
+  - Zeek logs in conn.log will log full connection entries, with orig and resp IPs and completed handshakes.
 
-- We'll check the `tcp_scan.pcap` file on Wireshark GUI
+- We'll check the `tcp_conn.pcap` file using `tshark` (terminal-based version of Wireshark). Run:
+  ```
+  tshark -r tcp_conn.pcap
+  ```
+  - tcpdump will show full connection attempts (SYN → SYN-ACK → ACK).
 
-- Let's check SSH logs on `/var/log/auth.log`:
+  Here's the same file using Wireshark GUI ().
+
+- Let's also check SSH logs on `/var/log/auth.log`:
  
-  - A full TCP Connect scan using nmap -sT triggers SSH logs because the port is open and it completes the entire TCP three-way handshake with the SSH service (running on port 22), and that makes it look like a legitimate connection attempt to the system.
+  - A full TCP Connect scan using nmap -sT triggers SSH logs because the port is open and the entire TCP three-way handshake with the SSH service (running on port 22) is completed, that makes it look like a legitimate connection attempt to the system.
 
   - Since the connection is fully established, the target service (e.g., SSH daemon) sees it as a real client attempting to connect.
+
+##
+
+### 2️⃣ TCP SYN Scan
+
+#### 🔬 Setup
+
+To start monitoring the Ubuntu VM network again with `tcpdump` and `zeek`, run the same commands we ran for the TCP Connect Scan.  
+
+
+##
+#### 🔎 Performing the Scan
+
+- On a terminal connected to the Kali VM, run the following command:
+
+  ```
+  sudo nmap -sS 10.0.1.X
+
+  ```
+  - To run this command root privileges are needed because Nmap sends raw SYN packets (a manually crafted TCP packet that has the SYN flag set to 1, it's used specifically to initiate a connection, just to see how the target responds). 
+
+##
+
+#### 📋 Results and Analysis:
+
+- Stop Zeek and tcpdump using `Ctrl + C`.
+
+**On Kali:**
+- Nmap only sends the SYN and receives SYN-ACK. It never completes the handshake.
+- Faster and more stealthy.
+
+- Output:
+
+**On Ubuntu:**
+- Zeek's log: `/opt/zeek/logs/current/conn.log`
+
+  - Zeek may still log them in conn.log, but as "incomplete connections" with a S0 state.
+
+- We'll check the `tcp_conn.pcap` file using `tshark` (terminal-based version of Wireshark). Run:
+  ```
+  tshark -r tcp_conn.pcap
+  ```
+  - tcpdump will show SYN packets from Kali but no ACKs back.
+  **Filters to apply:**
+  - tcp.flags.syn == 1 && tcp.flags.ack == 0 → shows SYNs
+
+  - tcp.flags.syn == 1 && tcp.flags.ack == 1 → shows SYN-ACKs
+
+  - tcp.flags.reset == 1 → shows RSTs (used in SYN scan tear-down)
+
+  Here's the same file using Wireshark GUI ().
+
+- Let's also check SSH logs on `/var/log/auth.log`:
+
+  - No entry is made in  `/var/log/auth.log`. SSH doesn’t consider it a real connection although the OS may still log it at a firewall or IDS level.
+
+
+##
+### Zeek conn.log Sample Comparison
+
+| Field    | TCP Connect Scan (-sT)   | TCP SYN Scan (-sS)       |
+| -------- | ------------------------ | ------------------------ |
+| State    | SF (connection finished) | S0 (SYN seen, no reply)  |
+| Duration | >0 seconds               | 0.000                    |
+| Notes    | Normal traffic           | Potential reconnaissance |
 
 
 
