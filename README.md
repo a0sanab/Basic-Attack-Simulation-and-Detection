@@ -301,6 +301,7 @@ Repeat this process to connect to the other VM or to open multiple terminal wind
 
 ---
 
+
 ## ⚔️ Attack Scenarios
 
 
@@ -356,7 +357,9 @@ One of the most fundamental reconnaissance techniques is port scanning. We use `
 It's a method used to discover open ports and services on a target system or network. It involves sending packets to various ports to determine which ones are open and listening, providing attackers with information to exploit vulnerabilities. 
 ##
 ### 🤝 The TCP Handshake 
-To understand how TCP Connect and SYN scans work, it’s important to know how a typical TCP connection is established. It´s purpose is to establish a reliable connection between a client and a server to ensure that both sides are ready to communicate before any data is transmitted. This process is also known as the **3-way handshake**:
+To understand how TCP Connect and SYN scans work (and SYN Floods, the attack we´ll perform afterwards), it’s important to know how a typical TCP connection is established.
+
+It´s purpose is to establish a reliable connection between a client and a server to ensure that both sides are ready to communicate before any data is transmitted. This process is also known as the **3-way handshake**:
 
 **1. SYN (Synchronize)  →** The client sends a SYN packet to the server to request a connection.
    
@@ -443,7 +446,7 @@ In cybersecurity, **reconnaissance** is typically the first phase of an attack, 
 
 ### 1️⃣ TCP Connect Scan
 
-#### 👁️ Start Monitoring on Ubuntu VM
+#### 👁️‍🗨️ Start Monitoring on Ubuntu VM
 
 1. Run the commands listed above on Monitoring Setup.
 2. We´ll name the file `tcpdump` is going to write on: `tcp_conn.pcap`.
@@ -471,7 +474,7 @@ In cybersecurity, **reconnaissance** is typically the first phase of an attack, 
 
 ##
 
-#### 📋 Results and Analysis:
+### 📊 Results and Analisis After a TCP Connect Scan
 
 - Stop Zeek and tcpdump using `Ctrl + C` to have isolated evidence per scan or attack.
 
@@ -509,7 +512,7 @@ In cybersecurity, **reconnaissance** is typically the first phase of an attack, 
 
 ### 2️⃣ TCP SYN Scan
 
-#### 👁️ Continue Monitoring on Ubuntu VM
+#### 👁️‍🗨️ Continue Monitoring on Ubuntu VM
 
 1. Run the commands listed above on Monitoring Setup.
 2. We´ll name the file `tcpdump` is going to write on: `tcp_syn.pcap`.
@@ -528,7 +531,7 @@ In cybersecurity, **reconnaissance** is typically the first phase of an attack, 
 
 ##
 
-#### 📋 Results and Analysis:
+### 📊 Results and Analisis After a TCP SYN Scan
 
 - Stop Zeek and tcpdump using `Ctrl + C`.
 
@@ -601,4 +604,69 @@ Once attackers know which ports are open, they can focus only on those, reducing
 ### 🛟 2. SYN Flood using hping3
 ##
 
+The gloal here is to simulate a **Denial-of-Service (DoS)** attack by overwhelming the Ubuntu VM (target) with a high volume of SYN packets. 
+
+#### 🛑 Denial of Service (DoS):
+
+- A type of cyberattack where an attacker deliberately tries to make a system, network, or service unavailable to its intended users. The goal is to overwhelm the target with traffic or requests so that it can no longer respond to legitimate users.
+
+#### 🚣‍♂️ SYN Flood
+
+A **SYN flood is a type of Denial-of-Service (DoS) attack** that targets the TCP connection handshake process. Its goal is to exhaust the target system’s resources so that it can’t respond to legitimate traffic.
+
+**In a SYN flood attack:**
+
+- The attacker sends a large number of SYN packets to the target.
+
+- The target responds with SYN-ACKs (if the port or service is open), allocating resources (like memory or connection slots) for each potential connection.
+
+- But the attacker never completes the handshake (never sends the final ACK). This leaves the server “hanging”, waiting for ACKs that never arrive.
+
+- If enough SYNs are sent in a short time, the server’s connection table fills up. Legitimate users can’t connect,  resulting in a **Denial of Service.**
+
+#### Characteristics of SYN Floods:
+- Attackers often use **spoofed IP addresses** to make tracing difficult. 
+
+- Can be amplified with tools like `hping3` or bots.
+
+- Targets services with open TCP ports (e.g., SSH on port 22 or HTTP on port 80). Port scanning can become handy here to gather information about which ports are open.
+##
+#### 🧐 What Are Spoofed IP Addresses?
+These are fake or forged IP addresses that an attacker uses to disguise the true origin of a network packet. The attacker replaces the real source IP address in a packet's header with another one, often the IP of a trusted system or a random address. 
+
+By faking the source address, the attacker makes it hard to trace where the attack came from. **This technique is called IP Spoofing.**
+
+- In a **SYN flood DoS attack**, spoofed IPs are often used to send thousands of SYN packets to a server and make the server try to respond to fake clients (that never reply).
+
+This makes the attack harder to detect and defend against, because the connections seem to come from many random sources.
+
+##
+
+### 🛟 SYN Flood Attack
+
+#### 👁️‍🗨️ Continue Monitoring on Ubuntu VM
+
+1. Run the commands listed above on Monitoring Setup.
+2. We´ll name the file `tcpdump` is going to write on: `tcp_flood.pcap`.
+
+##
+#### ⚔️ Performing the attack:
+- On a terminal connected to the Kali VM, run the following command:
+```
+hping3 -c 10000 -d 120 -S -w 64 -p 80 --flood --rand-source 10.0.1.X
+```
+
+**What does this do?:**
+
+
+  | Flag            | Meaning                                                            |
+  | --------------- | ------------------------------------------------------------------ |
+  | `-c 10000`      | Send 10,000 packets                                                |
+  | `-d 120`        | Each packet contains 120 bytes of data                             |
+  | `-S`            | Set the SYN flag (initiates TCP connection – like a SYN scan)      |
+  | `-w 64`         | Set the TCP window size to 64                                      |
+  | `-p 80`         | Target port 80 (commonly used for HTTP)                            |
+  | `--flood`       | Send packets as fast as possible without waiting for replies       |
+  | `--rand-source` | Randomize the source IP address of each packet **(spoofed addresses)** |
+  | `10.0.1.X`      | Target private IP address of the Ubuntu VM                         |
 
