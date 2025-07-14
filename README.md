@@ -303,7 +303,51 @@ Repeat this process to connect to the other VM or to open multiple terminal wind
 
 ## ⚔️ Attack Scenarios
 
+
+### Monitoring Setup
+
+Before running each attack, we will first configure our monitoring tools. This ensures that the traffic is properly captured and logged for analysis. By repeating this setup for every attack, we can:
+
+- Keep evidence isolated per technique
+- Make analysis easier and logs cleaner
+- Create smaller and more focused .pcap files
+
+This practice is especially important in labs like this one, where the goal is to learn and analyze each attack’s behavior individually.
+
+- On a terminal connected to the Ubuntu VM, we run:
+
+  ```
+  sudo tcpdump -i eth0 -w tcp_conn.pcap
+  ```
+  - We'll name each output file based on the scan or attack being performed, so that the logs are organized and easier to identify later.
+
+  **What this does:**
+
+  - `-i eth0` → Listen on interface **eth0** (the VM’s main network interface. We can always check using `ip link` or `ifconfig`, to be sure which one is actively transmitting and receiving data).
+
+  - `-w tcp_conn.pcap` → Write the raw captured packets directly to a file named `tcp_conn.pcap` (`tshark`, Wireshark's terminal version can also be used to do this). 
+
+  - No filters applied → Captures all traffic on that interface.
+  -  `tcpdump` will start capturing traffic and writing it to the file `tcp_conn.pcap` .
+
+
+- On another terminal connected to the Ubuntu VM, run: 
+  ```
+  sudo zeek -i eth0
+  ```
+  - This will run Zeek on the **eth0** interface.
+  - Zeek passively monitors the network interface.
+  - It will start logging immediately in the default directory (`/opt/zeek/logs/current/`).
+
+- To see the log as it grows on real time, we can run on another terminal:
+  ```
+  tail -f /opt/zeek/logs/current/conn.log
+  ```
+##
+
 ### 🕵️‍♀️ 1. Port Scanning using Nmap
+
+##
 
 ### 🔍 Port Scanning 
 One of the most fundamental reconnaissance techniques is port scanning. We use `nmap` to detect which ports are open on the target VM.
@@ -384,48 +428,25 @@ A “raw packet” is a network packet that is created and sent manually, rather
 💡 Powerful but requires admin/root privileges. It's used for stealthy port scanning, custom attack simulations and penetration testing.
 
 ##
-### 🧪 TCP Port Scan Comparison: TCP Connect vs. TCP SYN Scan
+
+### 🔎 Performing the Scans:
+### TCP Port Scan Comparison: TCP Connect vs. TCP SYN Scan
 
 Now, we’ll run two types of scans from the Kali VM to the Ubuntu VM and compare how they look from both the attacker's and defender's / targets's perspectives.
 
-The goal here is to simulate reconnaissance activity (what an attacker might do to fingerprint open services on a target) and analyze the traces that these two scans leave on the target machine.
+The goal here is to simulate **reconnaissance activity** (what an attacker might do to fingerprint open services on a target) and analyze the traces that these two scans leave on the target machine.
 
-In cybersecurity, reconnaissance is typically the first phase of an attack, as it focuses on gathering information about the target system or network.
+In cybersecurity, **reconnaissance** is typically the first phase of an attack, as it focuses on gathering information about the target system or network.
 
 
 ##
 
 ### 1️⃣ TCP Connect Scan
 
-#### 🔬 Setup
+#### 👁️ Start Monitoring on Ubuntu VM
 
-- On a terminal connected to the Ubuntu VM, we run:
-
-  ```
-  sudo tcpdump -i eth0 -w tcp_conn.pcap
-  ```
-
-  **What this does:**
-
-  - `-i eth0` → Listen on interface **eth0** (the VM’s main network interface. We can always check using `ip link` or `ifconfig`, to be sure which one is actively transmitting and receiving data).
-
-  - `-w tcp_conn.pcap` → Write the raw captured packets directly to a file named `tcp_conn.pcap` .
-
-  - No filters applied → Captures all traffic on that interface.
-  -  `tcpdump` will start capturing traffic and writing it to the file `tcp_conn.pcap` .
-
-- On another terminal connected to the Ubuntu VM, run: 
-  ```
-  sudo zeek -i eth0
-  ```
-  - This will run Zeek on the **eth0** interface.
-  - Zeek passively monitors the network interface.
-  - It will start logging immediately in the default directory (`/opt/zeek/logs/current/`).
-
-- To see the log as it grows on real time, we can run on another terminal:
-  ```
-  tail -f /opt/zeek/logs/current/conn.log
-  ```
+1. Run the commands listed above on Monitoring Setup.
+2. We´ll name the file `tcpdump` is going to write on: `tcp_conn.pcap`.
   
 ##
 #### 🔎 Performing the Scan
@@ -439,14 +460,20 @@ In cybersecurity, reconnaissance is typically the first phase of an attack, as i
   **What this does:**
   - `-sT` is the option used on Nmap to perform a **TCP Connect Scan** on the target IP address or hostname.
 
- `10.0.1.X` is the private IP address of the Ubuntu VM (use `ip a` or check Azure Networking tab).
+ `10.0.1.X` is the private IP address of the Ubuntu VM. This is the IP address used inside the VNet we defined when creating the infrastructure (use `ip a` or check Azure Networking tab).
+
+⚠️ **Important:** Although these scans—and the attacks we'll perform later—can technically be directed at the target VM's public IP, it's not recommended because:
+
+  - Doing so exposes the attack traffic to the internet, which could raise security flags, violate acceptable use policies, or cause issues with your Azure account.
+  - Tools like Zeek or tcpdump provide cleaner and more realistic analysis when monitoring internal traffic over the private IP.
+
 
 
 ##
 
 #### 📋 Results and Analysis:
 
-- Stop Zeek and tcpdump using `Ctrl + C` to have isolated evidence per scan or attack, that way the logs are clearer.
+- Stop Zeek and tcpdump using `Ctrl + C` to have isolated evidence per scan or attack.
 
 **On Kali:**
 - Nmap performed a full 3-way handshake to check which ports are open. 
@@ -468,7 +495,11 @@ In cybersecurity, reconnaissance is typically the first phase of an attack, as i
 
   Here's the same file using Wireshark GUI ().
 
-- Let's also check SSH logs on `/var/log/auth.log`:
+- Let's also check SSH logs on `/var/log/auth.log` running:
+  ```
+  grep "sshd" /var/log/auth.log
+  ```
+  - This filters the log to show only entries related to the SSH daemon.
  
   - A full TCP Connect scan using nmap -sT triggers SSH logs because the port is open and the entire TCP three-way handshake with the SSH service (running on port 22) is completed, that makes it look like a legitimate connection attempt to the system.
 
@@ -478,10 +509,10 @@ In cybersecurity, reconnaissance is typically the first phase of an attack, as i
 
 ### 2️⃣ TCP SYN Scan
 
-#### 🔬 Setup
+#### 👁️ Continue Monitoring on Ubuntu VM
 
-To start monitoring the Ubuntu VM network again with `tcpdump` and `zeek`, run the same commands we ran for the TCP Connect Scan.  
-
+1. Run the commands listed above on Monitoring Setup.
+2. We´ll name the file `tcpdump` is going to write on: `tcp_syn.pcap`.
 
 ##
 #### 🔎 Performing the Scan
@@ -492,7 +523,8 @@ To start monitoring the Ubuntu VM network again with `tcpdump` and `zeek`, run t
   sudo nmap -sS 10.0.1.X
 
   ```
-  - To run this command root privileges are needed because Nmap sends raw SYN packets (a manually crafted TCP packet that has the SYN flag set to 1, it's used specifically to initiate a connection, just to see how the target responds). 
+  - `-sS` is the option used on Nmap to perform a **TCP SYN Scan**.
+  - To run this command root privileges are needed because Nmap sends raw SYN packets (a manually crafted TCP packet that has the SYN flag set to 1, it's used specifically to initiate a connection, only to see how the target responds). 
 
 ##
 
@@ -539,6 +571,34 @@ To start monitoring the Ubuntu VM network again with `tcpdump` and `zeek`, run t
 | Duration | >0 seconds               | 0.000                    |
 | Notes    | Normal traffic           | Potential reconnaissance |
 
+##
 
+### 🔎 Why Do Attackers Scan for Open Ports?
+
+Understanding open ports and their associated services gives attackers valuable insight into how a system is structured and what vulnerabilities might exist.
+
+
+Each open port indicates a reachable service. These services may have vulnerabilities or weak configurations that can be exploited.
+
+* **Example:** If port 22 (SSH) is open, attackers may attempt brute-force login using tools like `hydra`. This is one of the attacks we´ll perform.
+* If port 80 or 443 is open, they may probe for outdated web server software or exposed admin panels.
+
+Identifying which ports are filtered helps map defensive systems like firewalls or IDS. It reveals the network's visibility and protection strategy.
+
+#### Service Fingerprinting
+This is a technique used to identify the specific software and version running on a given open port or network service.
+
+As we observed on the output after performing the scans, scanning tools can reveal software versions and configurations. With this information, attackers can:
+
+* Search for known vulnerabilities (Common Vulnerabilities and Exposures or CVEs) for specific versions.
+* Tailor **exploits** (a method or piece of code that takes advantage of a vulnerability) to maximize the chance of success.
+
+Once attackers know which ports are open, they can focus only on those, reducing their footprint and likelihood of detection.
+
+
+##
+
+### 🛟 2. SYN Flood using hping3
+##
 
 
