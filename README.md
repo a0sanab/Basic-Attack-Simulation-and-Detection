@@ -658,12 +658,75 @@ When sending a SYN packet, attackers can manually set a TCP window size value. N
 
 
 ##
+
+### 🛟 2. SYN Flood using hping3
+##
+
+The gloal here is to simulate a **Denial-of-Service (DoS)** attack by overwhelming the Ubuntu VM (target) with a high volume of SYN packets. 
+
+#### 🛑 Denial of Service (DoS):
+
+- A type of cyberattack where an attacker deliberately tries to make a system, network, or service unavailable to its intended users. The goal is to overwhelm the target with traffic or requests so that it can no longer respond to legitimate users.
+
+#### 🚣‍♂️ SYN Flood
+
+A **SYN flood is a type of Denial-of-Service (DoS) attack** that targets the TCP connection handshake process. Its purpose is to exhaust the target system’s resources by initiating a massive number of incomplete TCP connections.
+
+**In a SYN flood attack:**
+
+- The attacker sends a large number of SYN packets to the target.
+
+- The target responds with SYN-ACKs (assuming the port is open), allocating resources (like memory or connection slots) for each potential connection.
+
+- The attacker never sends the final ACK, leaving the connections in a half-open state.
+- Services with open TCP ports (e.g., SSH on port 22 or HTTP on port 80) are targeted.
+- The attacker may often use **spoofed IP addresses** to make tracing difficult. 
+
+- If enough SYNs are sent in a short time, the server’s connection table fills up. Legitimate users can’t connect,  resulting in a **Denial of Service.**
+
+
+##
+#### 🧐 What Are Spoofed IP Addresses?
+These are fake or forged IP addresses that an attacker uses to disguise the true origin of a network packet. The attacker replaces the real source IP address in a packet's header with another one, often the IP of a trusted system or a random address. 
+
+By faking the source address, the attacker makes it hard to trace where the attack came from. **This technique is called IP Spoofing.**
+
+- In a **SYN flood DoS attack**, spoofed IPs are often used to send thousands of SYN packets to a server and make the server try to respond to fake clients (that never reply).
+
+This makes the attack harder to detect and defend against, because the connections seem to come from many random sources.
+
+##
+#### 📥 TCP Window Size and Its Role in a SYN Flood
+
+When sending a SYN packet, attackers can manually set a TCP window size value. Normally:
+
+- The TCP window size is advertised by the receiver to indicate how much data it can buffer before needing an acknowledgment (ACK).
+
+- In a SYN packet, the sender also includes a window size indicating how much data it’s prepared to receive (this is normal TCP behavior).
+
+🚣‍♂️ **In the context of a SYN flood:**
+
+- The attacker sets a very small window size (e.g.,`-w 64`) to appear as a client with limited buffer capacity.
+
+- This can trick the target into allocating additional memory buffers or managing more overhead per connection, especially on large volumes of SYNs.
+
+- Combined with thousands of SYNs, this can accelerate resource exhaustion on the server.
+
+💡 While it’s normal for SYN packets to advertise a window, setting small values on purpose (repeatedly and at high volume) is suspicious and may be flagged by IDS tools like Zeek.
+
+
+
+##
 ### 🛟 SYN Flood Attack
 
 #### 👁️‍🗨️ Continue Monitoring on Ubuntu VM
 
 1. Run the commands listed above on Monitoring Setup.
 2. We´ll name the file `tcpdump` is going to write on: `tcp_flood.pcap`.
+
+#### 🔥 CPU / Memory Usage
+Run `top` or `htop` while the attack is happening to see how the system resources respond on real time to the attack. 
+
 
 ##
 #### ⚔️ Performing the Attack:
@@ -736,10 +799,13 @@ When launching a SYN flood attack, increasing the number of packets (e.g., using
 
 - Stop Zeek and tcpdump using `Ctrl + C`.
 
-#### Attacker's Perspective
+#### Attacker's Perspective:
 
 
-#### Target's Perspective
+#### Target's Perspective: 
+
+#### How to Know if the SYN Flood Caused a DoS (Denial of Service)
+After launching the  attack, we want to observe whether the target system (Ubuntu VM) becomes unable to respond to legitimate traffic. We can analise the generated logs to reach an answer:
 
 - **Zeek's log: `/opt/zeek/logs/current/conn.log`**
 
@@ -750,6 +816,7 @@ When launching a SYN flood attack, increasing the number of packets (e.g., using
     - Short durations
 
     - Unfinished handshakes (state S0 = "SYN sent, no reply")
+  
 
 - **Tcpdump pcap file: `syn_flood.pcap`**
   ```
@@ -781,10 +848,28 @@ When launching a SYN flood attack, increasing the number of packets (e.g., using
   - These are SYN-ACKs. If you see a lot of SYNs and no matching ACKs, you know the handshake wasn’t completed.
 
 
+- **Connection Table: SYN_RECV Overload**
+
+  Use the following command to count how many half-open connections exist:
+  ```
+  netstat -an | grep SYN_RECV | wc -l
+  ```
+    - If this number is in the hundreds or thousands, the system is struggling to complete handshakes, meaning it’s likely under SYN flood conditions.
+
+
 ##
 ### 🔐 3. Brute-force SSH using Hydra
 ##
 
 The goal is to simulate a brute-force login attack by trying multiple passwords against the SSH service on the Ubuntu VM.
+
+#### 🧨 What is a Brute-force Attack?
+
+A brute-force attack is a trial-and-error method used to gain unauthorized access to a system by systematically trying a large number of possible username and password combinations. The goal is to eventually guess the correct credentials through persistence.
+
+- In the context of SSH (Secure Shell), a brute-force attack attempts to log in by repeatedly trying different passwords for a known username — often using a wordlist that contains thousands or millions of common or leaked passwords.
+
+- These attacks are noisy, easily detectable, and can be mitigated with rate-limiting, account lockout mechanisms, or intrusion detection systems.
+
 
 
