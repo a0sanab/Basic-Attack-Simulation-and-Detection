@@ -100,7 +100,8 @@ resource "azurerm_linux_virtual_machine" "ubuntu_vm" {
   resource_group_name             = azurerm_resource_group.rg.name
   size                            = var.vm_size
   admin_username                  = var.admin_username
-  disable_password_authentication = true
+  disable_password_authentication = false
+  admin_password                  = var.admin_password
   network_interface_ids           = [azurerm_network_interface.ubuntu_nic.id]
 
   admin_ssh_key {
