@@ -237,6 +237,7 @@ graph TD
 4. Go to GitHub → Actions tab → Run the Deploy workflow manually
 
 ---
+
 ## 🛠️ Part 2: Simulating Attacks and Analyzing Traffic
 
 In this part, we use the infrastructure created in Part 1 to simulate basic cyberattacks using the Kali Linux VM and analyze their impact using monitoring tools installed on the Ubuntu VM.
@@ -301,11 +302,10 @@ Repeat this process to connect to the other VM or to open multiple terminal wind
 
 ---
 
-
 ## ⚔️ Attack Scenarios
 
 
-### Monitoring Setup
+### 👁️‍🗨️ Monitoring Setup
 
 Before running each attack, we will first configure our monitoring tools. This ensures that the traffic is properly captured and logged for analysis. By repeating this setup for every attack, we can:
 
@@ -409,11 +409,11 @@ This is also known as a **half-open scan or stealth scan**:
 So the connection is never fully established, only the **SYN → SYN-ACK** part happens.
 
 **Advantages:**
-- Stealthier: It doesn’t complete the handshake, so it’s less likely to be logged or trigger alarms.
+- **Stealthier:** It doesn’t complete the handshake, so it’s less likely to be logged or trigger alarms.
 - Faster and more efficient than a full TCP connection.
 
 **Disadvantages:**
-- Requires root privileges (or admin on Windows) because it needs to craft raw packets.
+- Requires root privileges (or admin on Windows) because it needs to craft **raw packets**.
 
 ##
 
@@ -448,7 +448,7 @@ In cybersecurity, **reconnaissance** is typically the first phase of an attack, 
 
 #### 👁️‍🗨️ Start Monitoring on Ubuntu VM
 
-1. Run the commands listed above on Monitoring Setup.
+1. Run the commands listed above on the Monitoring Setup section.
 2. We´ll name the file `tcpdump` is going to write on: `tcp_conn.pcap`.
   
 ##
@@ -524,7 +524,6 @@ In cybersecurity, **reconnaissance** is typically the first phase of an attack, 
 
   ```
   sudo nmap -sS 10.0.1.X
-
   ```
   - `-sS` is the option used on Nmap to perform a **TCP SYN Scan**.
   - To run this command root privileges are needed because Nmap sends raw SYN packets (a manually crafted TCP packet that has the SYN flag set to 1, it's used specifically to initiate a connection, only to see how the target responds). 
@@ -667,7 +666,7 @@ When sending a SYN packet, attackers can manually set a TCP window size value. N
 2. We´ll name the file `tcpdump` is going to write on: `tcp_flood.pcap`.
 
 ##
-#### ⚔️ Performing the attack:
+#### ⚔️ Performing the Attack:
 - On a terminal connected to the Kali VM, run the following command:
 ```
 hping3 -c 10000 -d 120 -S -w 64 -p 80 --flood --rand-source 10.0.1.X
@@ -682,14 +681,22 @@ With this command, we are crafting custom SYN packets. This is known as **packet
   | `-c 10000`      | Send 10,000 packets                                                |
   | `-d 120`        | Each packet contains 120 bytes of data                             |
   | `-S`            | Set the SYN flag (initiates TCP connection – like a SYN scan)      |
-  | `-w 64`         | Set the TCP window size to 64 (an abnormally small size)           |
+  | `-w 64`         | Set the TCP window size to 64 (see explanation above)              |
   | `-p 80`         | Target port 80 (commonly used for HTTP)                            |
   | `--flood`       | Send packets as fast as possible without waiting for replies       |
   | `--rand-source` | Randomize the source IP address of each packet **(spoofed addresses)** |
   | `10.0.1.X`      | Target private IP address of the Ubuntu VM                         |
 
+⚠️  **Important:** Using `-c` (count) limits the amount of packets being sent. Without it, the `--flood` option would tell `hping3` to send packets as fast as possible, indefinitely. The flood will only stop when: 
 
-**Why would the packets contain any data?** (`-d 120`)
+- You manually interrupt it (e.g., with Ctrl+C)
+- The system kills the process (e.g., due to resource exhaustion)
+
+This approach is more aggresive and can trigger security alerts or bandwidth limits on cloud platforms like Azure.
+
+
+##
+**Why Would the Packets Contain any Data?** (`-d 120`)
 
 A SYN packet (the first step of a TCP handshake) does not contain a data payload. It typically only carries the TCP header and control flags (like the SYN flag) and no actual content.
 
@@ -702,4 +709,82 @@ By using `-d 120`, we are adding 120 bytes of data to each SYN packet.
 - To try to bypass basic firewalls or detection systems that expect SYNs to be small.
 
 - To stress the target system more, as it must allocate resources to handle larger packets.
+
+##
+#### 📈 What Happens as You Increase the Number of Packets?
+When launching a SYN flood attack, increasing the number of packets (e.g., using `-c 10000` or `--flood`) has direct consequences on both the attacking and target systems.
+
+#### 📤 On the Attacker Side (Kali VM):
+- **Increased CPU and bandwidth usage:** Generating and transmitting a large number of crafted packets consumes system resources.
+
+- **Greater risk of packet drops:** If the sending rate is too high, some packets might be dropped before leaving the interface.
+
+- **Easier to detect:** Flooding traffic can trigger alerts in intrusion detection systems or rate-limiters on the network.
+
+#### 📥 On the Target Side (Ubuntu VM):
+- **TCP connection queue fills up:** The victim responds to each SYN with a SYN-ACK and waits for an ACK that never comes. These incomplete connections sit in a backlog queue.
+
+- **Resource exhaustion:** Each half-open connection consumes memory and CPU. The backlog queue fills up.
+
+- **Denial of Service occurs:** Legitimate users can't connect to services like SSH or HTTP.
+
+- **Performance degradation:** Under high loads, the VM may experience increased latency, service crashes, or become unresponsive.
+
+
+##
+### 📊 Results and Analisis After a SYN Flood
+
+- Stop Zeek and tcpdump using `Ctrl + C`.
+
+#### Attacker's Perspective
+
+
+#### Target's Perspective
+
+- **Zeek's log: `/opt/zeek/logs/current/conn.log`**
+
+  Zeek logs summarize flow-based activity. In a SYN flood, the attacker sends a large number of SYN packets, but doesn't complete the handshake. Zeek marks those as suspicious one-sided connections.
+
+    - Count of repeated connections from the same source IP
+
+    - Short durations
+
+    - Unfinished handshakes (state S0 = "SYN sent, no reply")
+
+- **Tcpdump pcap file: `syn_flood.pcap`**
+  ```
+  tshark -r tcp_conn.pcap
+  ```
+  - A huge number of TCP packets with:
+
+    - Only the SYN flag set
+
+    - Source: Kali VM IP
+
+    - Destination port: target of your attack (e.g., 80)
+
+  - Very few or no SYN-ACK responses
+
+  - No completed 3-way handshakes
+
+- Using Wireshark, we can filter: 
+  ```
+  tcp.flags.syn == 1 and tcp.flags.ack == 0
+  ```
+  - This shows only pure SYN packets — typical of a SYN flood.
+
+  - If the victim tried to respond:
+
+  ```
+  tcp.flags.syn == 1 and tcp.flags.ack == 1
+  ```
+  - These are SYN-ACKs. If you see a lot of SYNs and no matching ACKs, you know the handshake wasn’t completed.
+
+
+##
+### 🔐 3. Brute-force SSH using Hydra
+##
+
+The goal is to simulate a brute-force login attack by trying multiple passwords against the SSH service on the Ubuntu VM.
+
 
