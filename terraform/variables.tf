@@ -22,6 +22,11 @@ variable "admin_username" {
   description = "Admin username for the virtual machines"
   type        = string
 }
+variable "admin_password" {
+  description = "Admin password for the Ubuntu VM (for brute-force test)"
+  type        = string
+  sensitive   = true
+}
 
 variable "vm_size" {
   description = "Size of the virtual machines"
