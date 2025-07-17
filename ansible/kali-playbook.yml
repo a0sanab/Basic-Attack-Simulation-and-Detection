@@ -1,15 +1,16 @@
-name: Install Kali tools
-hosts: kali
-become: yes
-tasks:
-  - name: Update apt
-    apt:
-      update_cache: yes
+- name: Install Kali tools
+  hosts: kali
+  become: yes
+  tasks:
+    - name: Update apt
+      apt:
+        update_cache: yes
 
-  - name: Install tools
-    apt:
-      name:
-        - nmap
-        - hping3
-        - hydra
-      state: present
+    - name: Install tools
+      apt:
+        name:
+          - nmap
+          - hping3
+          - hydra
+        state: present
+
