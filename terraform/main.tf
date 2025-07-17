@@ -46,6 +46,83 @@ resource "azurerm_network_interface" "kali_nic" {
     public_ip_address_id          = azurerm_public_ip.kali_ip.id
   }
 }
+resource "azurerm_public_ip" "ubuntu_ip" {
+  name                = "ubuntu-pubip"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  allocation_method   = "Static"
+  sku                 = "Standard"
+}
+
+resource "azurerm_network_interface" "ubuntu_nic" {
+  name                = "ubuntu-nic"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+
+  ip_configuration {
+    name                          = "internal"
+    subnet_id                     = azurerm_subnet.subnet.id
+    private_ip_address_allocation = "Dynamic"
+    public_ip_address_id          = azurerm_public_ip.ubuntu_ip.id
+  }
+}
+
+# Network Security Group that allows SSH, HTTP and HTTPS
+resource "azurerm_network_security_group" "vm_nsg" {
+  name                = "vm-nsg"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+
+  security_rule {
+    name                       = "Allow-SSH"
+    priority                   = 1001
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "22"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+
+  security_rule {
+    name                       = "Allow-HTTP"
+    priority                   = 1002
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "80"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+
+  security_rule {
+    name                       = "Allow-HTTPS"
+    priority                   = 1003
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "443"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+
+}
+
+# Associate the NSG with Kali NIC
+resource "azurerm_network_interface_security_group_association" "kali_nsg_assoc" {
+  network_interface_id      = azurerm_network_interface.kali_nic.id
+  network_security_group_id = azurerm_network_security_group.vm_nsg.id
+}
+
+# Associate the NSG with Ubuntu NIC
+resource "azurerm_network_interface_security_group_association" "ubuntu_nsg_assoc" {
+  network_interface_id      = azurerm_network_interface.ubuntu_nic.id
+  network_security_group_id = azurerm_network_security_group.vm_nsg.id
+}
+
 
 resource "azurerm_linux_virtual_machine" "kali_vm" {
   name                            = "kali-vm"
@@ -81,26 +158,6 @@ resource "azurerm_linux_virtual_machine" "kali_vm" {
   }
 }
 
-resource "azurerm_public_ip" "ubuntu_ip" {
-  name                = "ubuntu-pubip"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-  allocation_method   = "Static"
-  sku                 = "Standard"
-}
-
-resource "azurerm_network_interface" "ubuntu_nic" {
-  name                = "ubuntu-nic"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-
-  ip_configuration {
-    name                          = "internal"
-    subnet_id                     = azurerm_subnet.subnet.id
-    private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = azurerm_public_ip.ubuntu_ip.id
-  }
-}
 
 resource "azurerm_linux_virtual_machine" "ubuntu_vm" {
   name                            = "ubuntu-vm"
