@@ -68,6 +68,12 @@ resource "azurerm_linux_virtual_machine" "kali_vm" {
     version   = "2024.4.1"
   }
 
+  plan {
+    name = "kali-2024-4"
+    publisher = "kali-linux"
+    product = "kali"
+  }
+
   os_disk {
     caching              = "ReadWrite"
     storage_account_type = "Standard_LRS"
