@@ -62,9 +62,9 @@ resource "azurerm_linux_virtual_machine" "kali_vm" {
   }
 
   source_image_reference {
-    publisher = "kali-linux"
+    publisher = "kalilinux"
     offer     = "kali"
-    sku       = "kali"
+    sku       = "kali-rolling"
     version   = "latest"
   }
 
