@@ -64,8 +64,8 @@ resource "azurerm_linux_virtual_machine" "kali_vm" {
   source_image_reference {
     publisher = "kali-linux"
     offer     = "kali"
-    sku       = "kali"
-    version   = "latest"
+    sku       = "kali-2024-4 "
+    version   = "2024.4.1"
   }
 
   os_disk {
