@@ -41,12 +41,19 @@ Creating the lab infrastructure in Azure using Terraform and Ansible, and deploy
 ### 🖥️ VM Creation with Terraform:
 - 1 VM: Kali Linux (for offensive tools)
   
-  **🤔 Why Kali Linux?:**
+  **Why Kali Linux?:**
     - It's purpose is: offensive security, penetration testing, ethical hacking.
     - Comes with many security tools pre-installed.
     - It's common to use Kali as the attacker and Ubuntu as the target in cybersecurity projects or labs.
       
 - 1 VM: Ubuntu (for monitoring and packet capture)
+  
+   **Why Ubuntu?:**
+
+  - It's a stable, widely supported Linux distribution often used for servers and monitoring setups.
+
+  💡 **On this VM**, we allow both SSH key-based and password-based authentication.
+  This is to enable password-based login scenarios, such as brute-force SSH attacks during Part 2. This configuration simulates real-world systems that are sometimes exposed with password access.
   
 Specifics (for better Azure credit optimization):
 - B1s (1vCPU, 1 GB RAM) for Ubuntu
@@ -66,17 +73,17 @@ This is the main configuration file where the infrastructure is declared. It def
       
 - **Subnet:** A smaller, more specific piece of a larger network (in this case, the Azure Virtual Network). This is necessary to define IP ranges for VMs.
 
-    **How are VNets and Subnets related?:**
+  **How are VNets and Subnets related?:**
     - The virtual network (VNet) is a big neighborhood — for example, 10.0.0.0/16 (65,536 IPs available).
     - A subnet is one street in that neighborhood — for example, 10.0.1.0/24 (256 IPs available).
   
-    **IP Address Assignment:**
+  **IP Address Assignment:**
     - Azure won’t assign IPs to VMs unless they belong to a subnet. It’s how Azure knows:
       - What IP range to assign
       - What security policies to enforce
       - How to route traffic
       
-    Each subnet gets its own range of IP addresses within the larger address space of the virtual network.
+  Each subnet gets its own range of IP addresses within the larger address space of the virtual network.
   
 - **Public IPs:** Each VM is assigned a dynamic public IP to be accessible remotely via SSH.
 - **Linux Virtual Machines:** One Kali and one Ubuntu VM, each with their own **network interface** (The NIC or Network Interface Card connects the VM to the virtual network and public IP) and SSH access.
@@ -88,6 +95,7 @@ Declares the variables used throughout the Terraform configuration such as:
 - Resource group name
 - VM size and admin username
 - SSH public key
+- Admin password (used only for Ubuntu)
 
 These variables can be customized via `terraform.tfvars`.
 
@@ -117,10 +125,12 @@ These are used by the GitHub Actions workflow to dynamically generate an Ansible
 #### `inventory.ini`
 
 🧾**What is an Ansible Inventory?**
-- An inventory file defines the hosts Ansible will connect to, how to reach them, and what login credentials or SSH settings to use. It is essentially a list of target hosts grouped by names.
-- On this project, it is **generated dynamically** by the GitHub Actions workflow using the output IPs from Terraform.
 
-Example format:
+ An inventory file defines the hosts Ansible will connect to, how to reach them, and what login credentials or SSH settings to use. It is essentially a list of target hosts grouped by names.
+
+ On this project, it is **generated dynamically** by the GitHub Actions workflow using the output IPs from Terraform.
+
+**Example format:**
 ```
 [kali]
 kali-vm ansible_host=xx.xx.xx.xx ansible_user=azureuser
@@ -149,6 +159,8 @@ A playbook that configures the **Kali VM** with penetration testing tools. It:
 For example, this playbook says:
 - “Connect to the hosts in the kali group, become root, and install nmap, hping3, and hydra.”
 
+💡 **Note:** These tools may already come pre-installed on Kali Linux. However, we explicitly install them using Ansible to ensure consistency across environments and to make the setup process fully reproducible.
+
 #### `ubuntu-playbook.yml`
 A playbook that configures the **Ubuntu VM** with monitoring tools. It:
 - Connects to the host in the `[ubuntu]` group
@@ -173,12 +185,10 @@ They work together like a lock and key:
 
 - Only your private key can “unlock” and log in.
 
-**In our CI/CD setup:**
+**In this  setup:**
 
-- We need a key pair. See here how to generate an SSH Key Pair.
-- Store the private key securely in GitHub Secrets (`SSH_PRIVATE_KEY`).
-- Repalce the public key in `terraform.tfvars` with the new matching key.
-- Use Ansible and GitHub Actions to SSH into the VMs without exposing passwords.
+- Both VMs are accessible using SSH key authentication.
+- The Ubuntu VM also accepts password-based login to allow brute-force attack simulations in Part 2.
 
 
 ---
@@ -198,7 +208,7 @@ The `.github/workflows/deploy.yml` file defines a CI/CD pipeline that:
 
 This allows for full automation of the infrastructure deployment and provisioning process with one GitHub Action run.
 
-<details> <summary>🔽 <h3>Click here to view the deployment flow diagram</h3></summary>
+<details> <summary>🔽 <h4>Click here to view the deployment flow diagram</h4></summary>
 
 ```mermaid
 graph TD
@@ -218,8 +228,10 @@ graph TD
 
 - Azure subscription
 - A service principal with Contributor role. See here how to generate a service principal on Azure.
-- An SSH Key Pair. See here how to generate an SSH Key Pair.
-- GitHub repository with the following secrets (you get these by creating a service principal):
+- An SSH Key Pair.
+  - Store the private key securely in GitHub Secrets (`SSH_PRIVATE_KEY`).
+  - Repalce the public key in `terraform.tfvars` with the new matching key.
+- GitHub repository with the following secrets:
 
   - `ARM_CLIENT_ID`
   - `ARM_CLIENT_SECRET`
@@ -290,13 +302,13 @@ chmod 600 key.pem
 To connect to a VM, open a terminal on your local computer and use the following command:
 
 ```
-ssh -i path/to/key.pem azureuser@<VM_PUBLIC_IP>
+ssh -i path/to/key.pem azureuser@<vm_public_ip>
 
 ```
 - Replace  `path/to/key.pem ` with the path to your private key file.
 
 - `azureuser` is the admin username used in `terraform.tfvars`, if you changed it replace it here.
-- Replace <VM_PUBLIC_IP> with the public IP address of one of the VMs (output from Terraform).
+- Replace `<vm_public_ip>` with the public IP address of one of the VMs (output from Terraform).
 
 Repeat this process to connect to the other VM or to open multiple terminal windows to run commands in parallel.
 
@@ -476,7 +488,7 @@ In cybersecurity, **reconnaissance** is typically the first phase of an attack, 
 
 ### 📊 Results and Analisis After a TCP Connect Scan
 
-- Stop Zeek and tcpdump using `Ctrl + C` to have isolated evidence per scan or attack.
+- Stop Zeek and tcpdump using `Ctrl + C` once the scan completes, to have isolated evidence per scan or attack.
 
 **On Kali:**
 - Nmap performed a full 3-way handshake to check which ports are open. 
@@ -488,7 +500,18 @@ In cybersecurity, **reconnaissance** is typically the first phase of an attack, 
   ```
   cat /opt/zeek/logs/current/conn.log
   ```
-  - Zeek logs in conn.log will log full connection entries, with orig and resp IPs and completed handshakes.
+  - Zeek logs in `conn.log` will log full connection entries, with orig and resp IPs and completed handshakes.
+
+  - In Zeek’s `conn.log` file, the state of a TCP connection is represented by a two-character code. These states reflect how far the connection progressed and what Zeek saw. Here’s a list of ones we might see in the log:
+
+  | Code   | Meaning                                                                 |
+  | ------ | ----------------------------------------------------------------------- |
+  | S0     | Connection attempt seen (SYN) but no reply                              |
+  | S1     | Connection established (SYN → SYN-ACK) but no final ACK from originator |
+  | S2     | Connection established and handshake completed, but no data sent        |
+  | S3     | Handshake completed, data sent in at least one direction                |
+  | SF     | Normal connection; data sent in both directions; closed cleanly         |
+  
 
 - We'll check the `tcp_conn.pcap` file using `tshark` (terminal-based version of Wireshark). Run:
   ```
@@ -532,7 +555,7 @@ In cybersecurity, **reconnaissance** is typically the first phase of an attack, 
 
 ### 📊 Results and Analisis After a TCP SYN Scan
 
-- Stop Zeek and tcpdump using `Ctrl + C`.
+- Stop Zeek and tcpdump using Ctrl + C once the scan completes.
 
 **On Kali:**
 - Nmap only sends the SYN and receives SYN-ACK. It never completes the handshake.
@@ -658,65 +681,6 @@ When sending a SYN packet, attackers can manually set a TCP window size value. N
 
 
 ##
-
-### 🛟 2. SYN Flood using hping3
-##
-
-The gloal here is to simulate a **Denial-of-Service (DoS)** attack by overwhelming the Ubuntu VM (target) with a high volume of SYN packets. 
-
-#### 🛑 Denial of Service (DoS):
-
-- A type of cyberattack where an attacker deliberately tries to make a system, network, or service unavailable to its intended users. The goal is to overwhelm the target with traffic or requests so that it can no longer respond to legitimate users.
-
-#### 🚣‍♂️ SYN Flood
-
-A **SYN flood is a type of Denial-of-Service (DoS) attack** that targets the TCP connection handshake process. Its purpose is to exhaust the target system’s resources by initiating a massive number of incomplete TCP connections.
-
-**In a SYN flood attack:**
-
-- The attacker sends a large number of SYN packets to the target.
-
-- The target responds with SYN-ACKs (assuming the port is open), allocating resources (like memory or connection slots) for each potential connection.
-
-- The attacker never sends the final ACK, leaving the connections in a half-open state.
-- Services with open TCP ports (e.g., SSH on port 22 or HTTP on port 80) are targeted.
-- The attacker may often use **spoofed IP addresses** to make tracing difficult. 
-
-- If enough SYNs are sent in a short time, the server’s connection table fills up. Legitimate users can’t connect,  resulting in a **Denial of Service.**
-
-
-##
-#### 🧐 What Are Spoofed IP Addresses?
-These are fake or forged IP addresses that an attacker uses to disguise the true origin of a network packet. The attacker replaces the real source IP address in a packet's header with another one, often the IP of a trusted system or a random address. 
-
-By faking the source address, the attacker makes it hard to trace where the attack came from. **This technique is called IP Spoofing.**
-
-- In a **SYN flood DoS attack**, spoofed IPs are often used to send thousands of SYN packets to a server and make the server try to respond to fake clients (that never reply).
-
-This makes the attack harder to detect and defend against, because the connections seem to come from many random sources.
-
-##
-#### 📥 TCP Window Size and Its Role in a SYN Flood
-
-When sending a SYN packet, attackers can manually set a TCP window size value. Normally:
-
-- The TCP window size is advertised by the receiver to indicate how much data it can buffer before needing an acknowledgment (ACK).
-
-- In a SYN packet, the sender also includes a window size indicating how much data it’s prepared to receive (this is normal TCP behavior).
-
-🚣‍♂️ **In the context of a SYN flood:**
-
-- The attacker sets a very small window size (e.g.,`-w 64`) to appear as a client with limited buffer capacity.
-
-- This can trick the target into allocating additional memory buffers or managing more overhead per connection, especially on large volumes of SYNs.
-
-- Combined with thousands of SYNs, this can accelerate resource exhaustion on the server.
-
-💡 While it’s normal for SYN packets to advertise a window, setting small values on purpose (repeatedly and at high volume) is suspicious and may be flagged by IDS tools like Zeek.
-
-
-
-##
 ### 🛟 SYN Flood Attack
 
 #### 👁️‍🗨️ Continue Monitoring on Ubuntu VM
@@ -774,7 +738,7 @@ By using `-d 120`, we are adding 120 bytes of data to each SYN packet.
 - To stress the target system more, as it must allocate resources to handle larger packets.
 
 ##
-#### 📈 What Happens as You Increase the Number of Packets?
+#### What Happens as You Increase the Number of Packets?
 When launching a SYN flood attack, increasing the number of packets (e.g., using `-c 10000` or `--flood`) has direct consequences on both the attacking and target systems.
 
 #### 📤 On the Attacker Side (Kali VM):
@@ -797,10 +761,10 @@ When launching a SYN flood attack, increasing the number of packets (e.g., using
 ##
 ### 📊 Results and Analisis After a SYN Flood
 
-- Stop Zeek and tcpdump using `Ctrl + C`.
+- Stop Zeek and tcpdump using Ctrl + C once the attack completes.
 
 #### Attacker's Perspective:
-
+**Output:**
 
 #### Target's Perspective: 
 
@@ -863,13 +827,120 @@ After launching the  attack, we want to observe whether the target system (Ubunt
 
 The goal is to simulate a brute-force login attack by trying multiple passwords against the SSH service on the Ubuntu VM.
 
-#### 🧨 What is a Brute-force Attack?
+#### 🔨 What is a Brute-force Attack?
 
 A brute-force attack is a trial-and-error method used to gain unauthorized access to a system by systematically trying a large number of possible username and password combinations. The goal is to eventually guess the correct credentials through persistence.
 
-- In the context of SSH (Secure Shell), a brute-force attack attempts to log in by repeatedly trying different passwords for a known username — often using a wordlist that contains thousands or millions of common or leaked passwords.
+- In the context of SSH (Secure Shell), a brute-force attack attempts to log in to the target machine by repeatedly trying different passwords for a known username, often using a wordlist that contains thousands or millions of common or leaked passwords.
 
-- These attacks are noisy, easily detectable, and can be mitigated with rate-limiting, account lockout mechanisms, or intrusion detection systems.
+- These attacks are **noisy, easily detectable**, and can be mitigated with rate-limiting, account lockout mechanisms, or intrusion detection systems.
 
+##
+#### 📄 Password List
+Before running the attack, ensure you have access to a password list. In this case, we'll use the popular **rockyou.txt** wordlist. This is a widely used wordlist that contains millions of the most common passwords.
+
+It originated from a real-world data breach and is commonly used in penetration testing and brute-force attacks. It is included in Kali Linux by default, but it's compressed.
+
+To prepare it for use, **decompress it** with:
+```
+sudo gunzip /usr/share/wordlists/rockyou.txt.gz
+```
+
+Once decompressed, it will be available at:
+```
+/usr/share/wordlists/rockyou.txt
+```
+
+##
+
+#### 👁️‍🗨️ Continue Monitoring on Ubuntu VM
+
+1. Run the commands listed above on Monitoring Setup.
+2. We´ll name the file `tcpdump` is going to write on: `brute_force.pcap`.
+
+##
+#### ⚔️ Performing the Attack:
+
+On a terminal connected to the Kali VM, run the following command:
+```
+hydra -l azureuser -P /usr/share/wordlists/rockyou.txt ssh://10.0.1.X
+```
+Hydra attempts many SSH login attempts in rapid succession using common passwords. If any attempt succeeds, it will be shown in the output.
+
+**Command Breakdown:**
+
+| Flag             | Meaning                                                                  |
+| ---------------- | ------------------------------------------------------------------------ |
+| `-l azureuser`   | Attempt to login as user "azureuser"                                     |
+| `-P rockyou.txt` | Use the popular rockyou wordlist (common passwords) as the password list |
+| `ssh://...`      | Specifies the protocol (SSH) and the target IP address                   |
+
+
+##
+### 📊 Results and Analysis After a Brute Force Attack
+- Stop Zeek and tcpdump using Ctrl + C once the attack completes.
+
+#### Attacker's Perspective:
+
+- Hydra will display real-time output of the attempts being made.
+
+- If the correct password is found, it will be clearly shown:
+
+- Even if unsuccessful, you’ll see how many passwords were tried and how long it took.
+
+#### Target's Perspective:
+
+After the attack, we analyze the logs and traffic to detect signs of brute-force behavior. This helps confirm that our monitoring setup can detect such attacks.
+
+
+  #### Detecting SSH Brute Force Using Logs and Packet Capture
+- Zeek's log: /opt/zeek/logs/current/conn.log
+
+- Zeek tracks all connection attempts, including failed ones. Signs of brute-force include:
+
+  - Numerous short-lived connections from the same source IP (Kali)
+
+  - Repeated connection attempts to port 22 (SSH)
+
+  - State field values such as:
+
+    - S0 (SYN sent, no reply)
+
+    - SF (connection established and finished normally, may happen once password is guessed)
+
+    - RSTO or RSTR (indicates resets from either side)
+
+  Sample Zeek filter:
+  ```
+  cat conn.log | zeek-cut id.orig_h id.resp_p proto service duration conn_state
+  ```
+  - Many entries with service ssh, same origin IP, short durations, failed connections.
+
+#### SSH Authentication Log (Ubuntu VM):
+- Check system logs to see login attempts:
+  ```
+  sudo cat /var/log/auth.log | grep sshd
+  ```
+Signs of brute-force:
+
+
+
+#### Tcpdump pcap file: brute_force.pcap
+
+- Analyze packet captures using Wireshark or TShark:
+  ```
+  tshark -r brute_force.pcap
+  ```
+
+  - Multiple TCP connections to port 22 from the same IP
+
+  - Several failed authentication attempts in SSH protocol stream
+
+  - Short durations and quick re-establishing of connections
+
+- Wireshark filter to focus on SSH traffic:
+  ```
+  tcp.port == 22
+  ```
 
 
