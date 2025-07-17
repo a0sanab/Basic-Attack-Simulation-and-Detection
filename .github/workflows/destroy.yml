@@ -1,4 +1,4 @@
-name: Destroy Attack Simulation Lab
+name: Destroy Basic Attack Simulation and Detection Lab
 
 on:
   workflow_dispatch:  # Manual trigger
