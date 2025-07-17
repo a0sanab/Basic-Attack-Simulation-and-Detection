@@ -29,7 +29,8 @@ resource "azurerm_public_ip" "kali_ip" {
   name                = "kali-pubip"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  allocation_method   = "Dynamic"
+  allocation_method   = "Static"
+  sku                 = "Standard"
 }
 
 # The NIC (Network Interface Card) connects the VM to the virtual network and public IP.
@@ -78,7 +79,8 @@ resource "azurerm_public_ip" "ubuntu_ip" {
   name                = "ubuntu-pubip"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  allocation_method   = "Dynamic"
+  allocation_method   = "Static"
+  sku                 = "Standard"
 }
 
 resource "azurerm_network_interface" "ubuntu_nic" {
