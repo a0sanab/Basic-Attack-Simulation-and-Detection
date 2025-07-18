@@ -6,7 +6,6 @@
       apt:
         name: gnupg
         state: present
-        update_cache: yes
 
     - name: Import Kali Linux signing key
       apt_key:
@@ -16,6 +15,7 @@
     - name: Update apt cache
       apt:
         update_cache: yes
+        cache_valid_time: 3600
 
     - name: Install Kali tools
       apt:
@@ -24,5 +24,4 @@
           - hping3
           - hydra
         state: present
-
 
