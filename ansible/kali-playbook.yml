@@ -2,6 +2,12 @@
   hosts: kali
   become: yes
   tasks:
+    - name: Install gnupg (required for apt_key)
+      ansible.builtin.apt:
+        name: gnupg
+        state: present
+        update_cache: yes
+
     - name: Add Kali Linux archive key
       ansible.builtin.apt_key:
         url: "https://archive.kali.org/archive-key.asc"
