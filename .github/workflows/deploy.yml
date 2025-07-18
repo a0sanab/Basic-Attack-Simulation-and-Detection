@@ -32,8 +32,11 @@ jobs:
 
       - name: Set up SSH key
         run: |
-          echo "$SSH_PRIVATE_KEY" > key.pem
-          chmod 600 key.pem
+          mkdir -p ~/.ssh
+
+          # Save private key
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
 
@@ -61,11 +64,11 @@ jobs:
 
       - name: Run Ansible playbook on Kali
         run: |
-          ansible-playbook -i ansible/inventory.ini ansible/kali-playbook.yml --private-key key.pem
+          ansible-playbook -i ansible/inventory.ini ansible/kali-playbook.yml --private-key ~/.ssh/id_rsa
 
       - name: Run Ansible playbook on Ubuntu
         run: |
-          ansible-playbook -i ansible/inventory.ini ansible/ubuntu-playbook.yml --private-key key.pem
+          ansible-playbook -i ansible/inventory.ini ansible/ubuntu-playbook.yml --private-key ~/.ssh/id_rsa
 
-      - name: Cleanup SSH key file
-        run: rm -f key.pem
+      #- name: Cleanup SSH key file
+      #  run: rm -f key.pem
