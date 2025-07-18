@@ -2,26 +2,21 @@
   hosts: kali
   become: yes
   tasks:
-    - name: Install gnupg (required for apt_key)
-      ansible.builtin.apt:
-        name: gnupg
-        state: present
-        update_cache: yes
-
-    - name: Add Kali Linux archive key
-      ansible.builtin.apt_key:
-        url: "https://archive.kali.org/archive-key.asc"
+    - name: Import Kali Linux signing key
+      apt_key:
+        url: https://archive.kali.org/archive-key.asc
         state: present
 
-    - name: Update apt
-      ansible.builtin.apt:
+    - name: Update apt cache
+      apt:
         update_cache: yes
 
-    - name: Install tools
-      ansible.builtin.apt:
+    - name: Install Kali tools
+      apt:
         name:
           - nmap
           - hping3
           - hydra
         state: present
+
 
