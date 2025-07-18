@@ -2,12 +2,17 @@
   hosts: kali
   become: yes
   tasks:
+    - name: Add Kali Linux archive key
+      ansible.builtin.apt_key:
+        url: "https://archive.kali.org/archive-key.asc"
+        state: present
+
     - name: Update apt
-      apt:
+      ansible.builtin.apt:
         update_cache: yes
 
     - name: Install tools
-      apt:
+      ansible.builtin.apt:
         name:
           - nmap
           - hping3
