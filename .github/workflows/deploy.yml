@@ -51,6 +51,14 @@ jobs:
           echo "[ubuntu]" >> ansible/inventory.ini
           echo "ubuntu-vm ansible_host=$(terraform -chdir=terraform output -raw ubuntu_public_ip) ansible_user=azureuser" >> ansible/inventory.ini
 
+      - name: Trust Kali VM host key
+        run: |
+          ssh-keyscan -H $(terraform -chdir=terraform output -raw kali_public_ip) >> ~/.ssh/known_hosts
+
+      - name: Trust Ubuntu VM host key
+        run: |
+          ssh-keyscan -H $(terraform -chdir=terraform output -raw ubuntu_public_ip) >> ~/.ssh/known_hosts
+
       - name: Run Ansible playbook on Kali
         run: |
           ansible-playbook -i ansible/inventory.ini ansible/kali-playbook.yml --private-key key.pem
