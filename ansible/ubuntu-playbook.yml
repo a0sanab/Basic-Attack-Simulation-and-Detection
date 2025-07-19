@@ -2,14 +2,35 @@
   hosts: ubuntu
   become: yes
   tasks:
-    - name: Update apt
+    - name: Update apt and install prerequisites
+      apt:
+        name:
+          - gnupg
+          - curl
+          - software-properties-common
+        state: present
+        update_cache: yes
+
+    - name: Add Zeek GPG key
+      apt_key:
+        url: https://download.opensuse.org/repositories/security:zeek/xUbuntu_22.04/Release.key
+        state: present
+
+    - name: Add Zeek APT repository
+      apt_repository:
+        repo: deb https://download.opensuse.org/repositories/security:/zeek/xUbuntu_22.04/ /
+        state: present
+        filename: zeek
+
+    - name: Update apt cache again
       apt:
         update_cache: yes
 
-    - name: Install monitoring tools
+    - name: Install monitoring tools including Zeek
       apt:
         name:
           - wireshark
           - tcpdump
           - zeek
         state: present
+
