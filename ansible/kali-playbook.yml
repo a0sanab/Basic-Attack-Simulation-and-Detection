@@ -2,6 +2,11 @@
   hosts: kali
   become: yes
   tasks:
+    - name: Ensure apt cache is updated early
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
     - name: Install gnupg (required for apt_key)
       apt:
         name: gnupg
@@ -12,7 +17,7 @@
         url: https://archive.kali.org/archive-key.asc
         state: present
 
-    - name: Update apt cache
+    - name: Update apt cache again after adding key
       apt:
         update_cache: yes
         cache_valid_time: 3600
