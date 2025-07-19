@@ -27,7 +27,7 @@ jobs:
           ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
 
       - name: Terraform Destroy
-        run: terraform destroy -auto-approve
+        run: terraform destroy -auto-approve -var-file="terraform.tfvars"
         working-directory: terraform
         env:
           ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
@@ -43,7 +43,22 @@ jobs:
           subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
           client-secret: ${{ secrets.ARM_CLIENT_SECRET }}
 
-      - name: Delete Resource Group (fallback)
+      - name: List Azure resource groups (for visibility)
+        run: az group list --output table
+
+      - name: Load resource group name from tfvars
+        id: tfvars
         run: |
-          echo "Deleting resource group 'cyber-rg' as a fallback..."
-          az group delete --name cyber-rg --yes --no-wait
+          rg=$(grep 'resource_group_name' terraform/terraform.tfvars | cut -d= -f2 | tr -d ' "')
+          echo "RG_NAME=$rg" >> $GITHUB_OUTPUT
+
+      - name: Check and delete resource group (fallback)
+        run: |
+          RG_NAME="${{ steps.tfvars.outputs.RG_NAME }}"
+          echo "Checking if resource group '$RG_NAME' still exists..."
+          if az group exists --name "$RG_NAME"; then
+            echo "Resource group still exists, deleting..."
+            az group delete --name "$RG_NAME" --yes --no-wait
+          else
+            echo "Resource group already deleted by Terraform."
+          fi
