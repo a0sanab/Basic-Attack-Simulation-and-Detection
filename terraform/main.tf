@@ -141,12 +141,12 @@ resource "azurerm_linux_virtual_machine" "kali_vm" {
   source_image_reference {
     publisher = "kali-linux"
     offer     = "kali"
-    sku       = "kali-2024-4"
-    version   = "2024.4.1"
+    sku       = "kali-2025-2"
+    version   = "2025.2.0"
   }
 
   plan {
-    name = "kali-2024-4"
+    name = "kali-2025-2"
     publisher = "kali-linux"
     product = "kali"
   }
