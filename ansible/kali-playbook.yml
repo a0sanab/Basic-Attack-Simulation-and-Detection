@@ -2,22 +2,36 @@
   hosts: kali
   become: yes
   tasks:
-    - name: Ensure apt cache is updated early
+    - name: Update apt and install gnupg
       apt:
         update_cache: yes
-        cache_valid_time: 3600
-
-    - name: Install gnupg (required for apt_key)
-      apt:
         name: gnupg
         state: present
 
-    - name: Import Kali Linux signing key
-      apt_key:
-        url: https://archive.kali.org/archive-key.asc
-        state: present
+    - name: Create keyrings directory
+      file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
 
-    - name: Update apt cache again after adding key
+    - name: Download Kali archive signing key
+      get_url:
+        url: https://archive.kali.org/archive-key.asc
+        dest: /etc/apt/keyrings/kali.asc
+
+    - name: Convert signing key to GPG format
+      command: >
+        gpg --dearmor -o /etc/apt/keyrings/kali.gpg /etc/apt/keyrings/kali.asc
+      args:
+        creates: /etc/apt/keyrings/kali.gpg
+
+    - name: Add Kali repository with signed-by option
+      copy:
+        dest: /etc/apt/sources.list.d/kali.list
+        content: |
+          deb [signed-by=/etc/apt/keyrings/kali.gpg] http://kali.download/kali kali-rolling main contrib non-free
+
+    - name: Update apt cache after adding repo
       apt:
         update_cache: yes
         cache_valid_time: 3600
@@ -29,4 +43,3 @@
           - hping3
           - hydra
         state: present
-
