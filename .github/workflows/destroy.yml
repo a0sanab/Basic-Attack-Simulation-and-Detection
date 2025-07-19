@@ -8,6 +8,13 @@ jobs:
     name: Destroy infrastructure and resource group
     runs-on: ubuntu-latest
 
+    env:
+      ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+      ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+      ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+      TF_VAR_resource_group_name: cyber-rg
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -20,45 +27,17 @@ jobs:
       - name: Terraform Init
         run: terraform init
         working-directory: terraform
-        env:
-          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
-          ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
-          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
-          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
 
       - name: Terraform Destroy
-        run: terraform destroy -auto-approve -var-file="terraform.tfvars"
+        run: terraform destroy -auto-approve
         working-directory: terraform
-        env:
-          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
-          ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
-          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
-          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
 
       - name: Azure CLI Login
         uses: azure/login@v1
         with:
-          client-id: ${{ secrets.ARM_CLIENT_ID }}
-          tenant-id: ${{ secrets.ARM_TENANT_ID }}
-          subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
-          client-secret: ${{ secrets.ARM_CLIENT_SECRET }}
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: List Azure resource groups (for visibility)
-        run: az group list --output table
-
-      - name: Load resource group name from tfvars
-        id: tfvars
+      - name: Delete Resource Group (fallback)
         run: |
-          rg=$(grep 'resource_group_name' terraform/terraform.tfvars | cut -d= -f2 | tr -d ' "')
-          echo "RG_NAME=$rg" >> $GITHUB_OUTPUT
-
-      - name: Check and delete resource group (fallback)
-        run: |
-          RG_NAME="${{ steps.tfvars.outputs.RG_NAME }}"
-          echo "Checking if resource group '$RG_NAME' still exists..."
-          if az group exists --name "$RG_NAME"; then
-            echo "Resource group still exists, deleting..."
-            az group delete --name "$RG_NAME" --yes --no-wait
-          else
-            echo "Resource group already deleted by Terraform."
-          fi
+          echo "Attempting to delete resource group '${TF_VAR_resource_group_name}' as a fallback..."
+          az group delete --name "${TF_VAR_resource_group_name}" --yes --no-wait
