@@ -43,3 +43,35 @@
           - hping3
           - hydra
         state: present
+        
+    - name: Create password wordlist file for Brute Force Attack
+      copy:
+        dest: /opt/sample-passwords.txt
+        mode: '0644'
+        content: |
+          123456
+          password
+          qwerty
+          12345678
+          berrycute
+          letmein
+          @dmin
+          pizzaplanet
+          welcome
+          123456789
+          OneDirection2010
+          passw0rd
+          p@ssw0rd123
+          Disney2025
+          ChickenNuggets
+          potato
+          111111
+          goldfish1
+          qwertyuiop
+          icecreamsundae111
+          Hello1234
+          ChocolateVanilla
+          Cyber@1234xyz
+          SevenEight
+          zxcvbnm
+          milkyway23
