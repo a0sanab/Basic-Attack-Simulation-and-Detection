@@ -1,8 +1,9 @@
-- name: Setup Ubuntu for monitoring
+- name: Setup Ubuntu VM for monitoring
   hosts: ubuntu
   become: yes
+
   tasks:
-    - name: Update apt and install prerequisites
+    - name: Update apt and install base tools
       apt:
         name:
           - gnupg
@@ -26,11 +27,31 @@
       apt:
         update_cache: yes
 
-    - name: Install monitoring tools including Zeek
+    - name: Install monitoring tools (tshark, tcpdump, zeek)
       apt:
         name:
-          - wireshark
+          - tshark
           - tcpdump
           - zeek
         state: present
 
+    - name: Ensure Zeek log directory exists
+      file:
+        path: /opt/zeek/logs
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Add Zeek to secure_path for sudo
+      lineinfile:
+        path: /etc/sudoers.d/zeek-path
+        create: yes
+        mode: '0440'
+        line: 'Defaults secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/zeek/bin"'
+
+    - name: Add azureuser to wireshark group (for running tshark without sudo)
+      user:
+        name: azureuser
+        groups: wireshark
+        append: yes
