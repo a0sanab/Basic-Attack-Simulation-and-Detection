@@ -50,8 +50,20 @@
         mode: '0440'
         line: 'Defaults secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/zeek/bin"'
 
-    - name: Add azureuser to wireshark group (for running tshark without sudo)
-      user:
-        name: azureuser
-        groups: wireshark
-        append: yes
+    - name: Create Zeek attack logging script
+      copy:  # To create the script directly on the remote VM
+        dest: /usr/local/bin/start_attack_logging
+        mode: '0755'  # Makes it executable
+        content: |
+          #!/bin/bash
+          if [ -z "$1" ]; then
+            echo "Usage: $0 <attack_name>"
+            exit 1
+          fi
+          attack_name=$1
+          logdir=~/zeek-logs/$attack_name
+          mkdir -p "$logdir"
+          cd "$logdir" || exit 1
+          echo "Starting Zeek in $logdir ..."
+          sudo zeek -i eth0 -C local
+
