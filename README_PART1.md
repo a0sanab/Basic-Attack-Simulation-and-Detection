@@ -1,4 +1,5 @@
 # 🛠️ Part 1: Building the Cyber Lab Environment
+This section explains how the lab infrastructure in Azure is created using Terraform and Ansible, and deploying it automatically via GitHub Actions (CI/CD).
 
 ---
 ## 📁 Project Structure
