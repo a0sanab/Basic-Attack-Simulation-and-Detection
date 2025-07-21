@@ -1,5 +1,29 @@
-
 # 🛠️ Part 1: Building the Cyber Lab Environment
+
+---
+## 📁 Project Structure
+
+```
+.
+├── .github/
+│   └── workflows/
+│       └── deploy.yml         # GitHub Actions workflow
+├── terraform/
+│   ├── main.tf                # Main Terraform infrastructure definition
+│   ├── outputs.tf             # Terraform output variables
+│   ├── terraform.tfvars       # Values for Terraform variables
+│   └── variables.tf           # Terraform variable declarations
+├── ansible/
+│   ├── kali-playbook.yml      # Ansible playbook for Kali VM
+│   ├── ubuntu-playbook.yml    # Ansible playbook for Ubuntu VM
+│   └── inventory.ini          # Populated dynamically by GitHub Actions
+├── .gitignore                 # Ignore key.pem
+├── README_PART1.md            # Part 1: Cyber Lab Setup
+├── README_PART2.md            # Part 2: Attack Simulation and Traffic Analysis
+└── README.md
+
+```
+---
 
 ### 🔧 What are Terraform, Ansible, and CI/CD?
 
