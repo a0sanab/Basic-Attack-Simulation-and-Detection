@@ -43,7 +43,6 @@
           - hping3
           - hydra
           - dsniff 
-          - arpspoof
           - dns2tcp
           - tcpdump
         state: present
