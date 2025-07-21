@@ -33,7 +33,6 @@
           - tshark
           - tcpdump
           - zeek
-          - zeek-cut
         state: present
 
     - name: Ensure Zeek log directory exists
