@@ -1,9 +1,21 @@
-# 🛡️ Basic Attack Simulation and Detection Lab using CI/CD and IaC
+#  Basic Attack Simulation and Detection Lab using CI/CD and IaC
 
-### 🛠️ Part 1: Building the Cyber Lab Environment
-Creating the lab infrastructure in Azure using Terraform and Ansible, and deploying it automatically via GitHub Actions (CI/CD).
+Welcome to this cybersecurity project that combines offensive and defensive strategies within a fully automated Azure environment.
 
-### ⚔️ Part 2: Simulating Attacks and Analyzing Traffic
+---
+
+## 🛠️ [Part 1: Building the Cyber Lab Environment](README_PART1.md)
+Deploy a virtual lab in Azure using:
+- **Terraform** (IaC)
+- **Ansible** (configuration)
+- **GitHub Actions** (CI/CD)
+
+---
+
+## ⚔️ [Part 2: Simulating Attacks and Analyzing Traffic](README_PART2.md)
+Execute and monitor attacks using:
+- **Kali Linux (as the attacker)** with Hydra, arpspoof, dns2tcp, etc.
+- **Ubuntu (as the victim)** with Zeek, tshark and tcpdump for traffic analysis
 
 ---
 
@@ -24,7 +36,10 @@ Creating the lab infrastructure in Azure using Terraform and Ansible, and deploy
 │   ├── ubuntu-playbook.yml    # Ansible playbook for Ubuntu VM
 │   └── inventory.ini          # Populated dynamically by GitHub Actions
 ├── .gitignore                 # Ignore key.pem
+├── README_PART1.md            # Part 1: Cyber Lab Setup
+├── README_PART2.md            # Part 2: Attack Simulation and Traffic Analysis
 └── README.md
+
 ```
 
 ---
