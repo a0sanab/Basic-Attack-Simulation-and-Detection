@@ -1,14 +1,14 @@
 # 🛠️ Part 2: Simulating Attacks and Analyzing Traffic
 
-In this part, we use the infrastructure created in Part 1 to simulate basic cyberattacks using the Kali Linux VM and analyze their impact using monitoring tools installed on the Ubuntu VM.
+This section explains how to use the infrastructure created in [Part 1: Building the Cyber Lab Environment](README_PART1.md) to demonstrate several real-world cyberattacks in a controlled Azure environment, showcasing both offensive techniques (from a Kali Linux virtual machine) and monitoring/detection (on an Ubuntu VM using tools like Zeek, tcpdump and tshark). **These exercises are designed for educational purposes only.**
 
 ---
 
 ### 🧰 Tools Involved
   - **On Kali Linux (Attacker)**:
-    - `nmap`: for port scanning
-    - `hping3`: for sending custom TCP/IP packets (e.g., SYN flood)
+    - `arspoof` :
     - `hydra`: for brute force attacks on services like SSH or FTP
+    - `dns2tcp`:
 
   - **On Ubuntu (Monitor/Target)**:
     - ####  `tcpdump` :
@@ -50,13 +50,13 @@ chmod 600 key.pem
 To connect to a VM, open a terminal on your local computer and use the following command:
 
 ```
-ssh -i path/to/key.pem azureuser@<vm_public_ip>
+ssh -i path/to/key.pem azureuser@20.169.229.158
 
 ```
 - Replace  `path/to/key.pem ` with the path to your private key file.
 
 - `azureuser` is the admin username used in `terraform.tfvars`, if you changed it replace it here.
-- Replace `<vm_public_ip>` with the public IP address of one of the VMs (output from Terraform).
+- Replace `20.169.229.158` with the public IP address of one of the VMs (output from Terraform).
 
 Repeat this process to connect to the other VM or to open multiple terminal windows to run commands in parallel.
 
@@ -106,17 +106,7 @@ This practice is especially important in labs like this one, where the goal is t
   ```
 ##
 
-### 🕵️‍♀️ 1. Port Scanning using Nmap
-
-##
-
-### 🔍 Port Scanning 
-One of the most fundamental reconnaissance techniques is port scanning. We use `nmap` to detect which ports are open on the target VM.
-
-#### What is port scanning?:
-It's a method used to discover open ports and services on a target system or network. It involves sending packets to various ports to determine which ones are open and listening, providing attackers with information to exploit vulnerabilities. 
-##
-### 🤝 The TCP Handshake 
+### 🤝 TCP Handshake 
 To understand how TCP Connect and SYN scans work (and SYN Floods, the attack we´ll perform afterwards), it’s important to know how a typical TCP connection is established.
 
 It´s purpose is to establish a reliable connection between a client and a server to ensure that both sides are ready to communicate before any data is transmitted. This process is also known as the **3-way handshake**:
@@ -127,455 +117,146 @@ It´s purpose is to establish a reliable connection between a client and a serve
    
 **3.  ACK (Acknowledge) →** The client sends back an ACK, acknowledging the server's SYN-ACK to complete the handshake. Both client and server are now aware of the connection and ready to transmit data.
 
-- 💡 If any of these steps fail, the connection does not fully establish. This behavior is what scanners like nmap exploit to detect open, closed, or filtered ports.
-##
-#### What is Nmap?:
-`nmap`, short for Network Mapper, is a powerful open-source network discovery and scanning tool used primarily for: host discovery, port scanning, OS and service detection.
+💡 If any of these steps fail, the connection does not fully establish. This behavior is what scanners like nmap exploit to detect open, closed, or filtered ports.
 
 ##
-
-### 🔍 TCP Port Scanning Techniques
-
-#### 👣 TCP Connect Scan (-sT option in Nmap)
-
-- Performs a full 3-way handshake **(SYN → SYN-ACK → ACK)**.
-- Uses the operating system’s network stack (the part of the OS that's in charge of network communication). This means that the OS handles:
-  - Sending the SYN packet
-  - Receiving the SYN-ACK
-  - Sending the ACK to complete the handshake
-  - Keeping the connection open or closing it cleanly
-    
-  **Why does this matter?:**
-  - Using the OS's network stack is considered normal TCP behavior. It's easier but more detectable (leaves logs).
-
-- If the port is open, the connection is fully established, and then closed.
-
-**Advantages:**
-- Does not require root privileges because we're not using raw packets (the OS's network stack handles the packets).
-
-**Disadvantages:**
-- Easy to detect by firewalls and intrusion detection systems (IDS), because it behaves like normal traffic.
-- Leaves logs on the target system (because the connection is fully established and closed).
-
+### 🕵️ 1. ARP Spoofing / Man-in-the-Middle (MITM) using Arspoof
 ##
-#### 🕵️ TCP SYN Scan (-sS option in Nmap)
 
-This is also known as a **half-open scan or stealth scan**:
+#### What is ARP?
+ **ARP (Address Resolution Protocol)** is communication protocol used in local networks to map **IP addresses** (like 10.0.0.4) to **MAC addresses** (**unique** hardware addresses like 00:1A:2B:3C:4D:5E assigned to network interfaces). This is essential for communication within a local network. It acts as a translator between the logical IP addresses used for routing and the physical MAC addresses used by network hardware. 
 
-- Nmap sends a SYN packet.
-- If the port is open, the server replies with a SYN-ACK.
-- But instead of replying with an ACK (step 3, to complete the handshake), Nmap sends an RST (reset) to tear down the connection immediately.
+ **Important characteristics:**
 
-So the connection is never fully established, only the **SYN → SYN-ACK** part happens.
+- Devices maintain an ARP table to keep track of these mappings.
 
-**Advantages:**
-- **Stealthier:** It doesn’t complete the handshake, so it’s less likely to be logged or trigger alarms.
-- Faster and more efficient than a full TCP connection.
-
-**Disadvantages:**
-- Requires root privileges (or admin on Windows) because it needs to craft **raw packets**.
+- Usually, devices use ARP to contact the router or gateway that enables them to connect to the Internet.
+- Unfortunately, ARP is unauthenticated, meaning any device can send fake ARP messages.
 
 ##
 
-#### What are Raw Packets?:
-A “raw packet” is a network packet that is created and sent manually, rather than being constructed automatically by the operating system’s networking stack. 
+####  ARP Spoofing
+ In an **ARP spoofing attack**, an attacker tricks a victim (Ubuntu VM), by sending forged ARP messages, into thinking the attacker’s MAC address is the gateway (router) and viceversa. This allows the attacker to:
 
-**With raw packets, a program:**
+  - Intercept and be in the middle of all communications **(Man-in-the-Middle)**
 
-- Manually creates its own packet from scratch (or with special tools)
+  - Modify or drop packets
 
-- Sets flags like SYN, ACK, etc.
+  - Launch further attacks like credential theft
 
-- Sends the packet over the network without letting the OS manage the connection
+💡 It’s local network based, meaning both machines need to be on the same subnet.
+##
+#### IP Fowarding and ARP Spoofing
+IP forwarding allows the attacker (Kali VM) to act like a router — forwarding traffic from one device to another. **IP forwarding means: “read and pass it along.”**
 
-💡 Powerful but requires admin/root privileges. It's used for stealthy port scanning, custom attack simulations and penetration testing.
+**Why does it matter wirth ARP Spoofing?:**
+
+- When doing ARP spoofing (man-in-the-middle), both the victim and the gateway send their traffic to the attacker's machine, thinking it's the other.
+
+- But unless the attacker forwards that traffic to the real destination (e.g., the gateway), the victim will lose connection (because packets get stuck on the attacker).
 
 ##
-
-### 🔎 Performing the Scans:
-### TCP Port Scan Comparison: TCP Connect vs. TCP SYN Scan
-
-Now, we’ll run two types of scans from the Kali VM to the Ubuntu VM and compare how they look from both the attacker's and defender's / targets's perspectives.
-
-The goal here is to simulate **reconnaissance activity** (what an attacker might do to fingerprint open services on a target) and analyze the traces that these two scans leave on the target machine.
-
-In cybersecurity, **reconnaissance** is typically the first phase of an attack, as it focuses on gathering information about the target system or network.
-
-
-##
-
-### 1️⃣ TCP Connect Scan
-
-#### 👁️‍🗨️ Start Monitoring on Ubuntu VM
-
-1. Run the commands listed above on the Monitoring Setup section.
-2. We´ll name the file `tcpdump` is going to write on: `tcp_conn.pcap`.
-  
-##
-#### 🔎 Performing the Scan
-
-- On a terminal connected to the Kali VM, run the following command:
-
-  ```
-  nmap -sT 10.0.1.X
-  ```
-
-  **What this does:**
-  - `-sT` is the option used on Nmap to perform a **TCP Connect Scan** on the target IP address or hostname.
-
- `10.0.1.X` is the private IP address of the Ubuntu VM. This is the IP address used inside the VNet we defined when creating the infrastructure (use `ip a` or check Azure Networking tab).
-
-⚠️ **Important:** Although these scans—and the attacks we'll perform later—can technically be directed at the target VM's public IP, it's not recommended because:
-
-  - Doing so exposes the attack traffic to the internet, which could raise security flags, violate acceptable use policies, or cause issues with your Azure account.
-  - Tools like Zeek or tcpdump provide cleaner and more realistic analysis when monitoring internal traffic over the private IP.
-
-
-
-##
-
-### 📊 Results and Analisis After a TCP Connect Scan
-
-- Stop Zeek and tcpdump using `Ctrl + C` once the scan completes, to have isolated evidence per scan or attack.
-
-**On Kali:**
-- Nmap performed a full 3-way handshake to check which ports are open. 
-
-- Output:
-
-**On Ubuntu:**
-- To print Zeek's log run: 
-  ```
-  cat /opt/zeek/logs/current/conn.log
-  ```
-  - Zeek logs in `conn.log` will log full connection entries, with orig and resp IPs and completed handshakes.
-
-  - In Zeek’s `conn.log` file, the state of a TCP connection is represented by a two-character code. These states reflect how far the connection progressed and what Zeek saw. Here’s a list of ones we might see in the log:
-
-  | Code   | Meaning                                                                 |
-  | ------ | ----------------------------------------------------------------------- |
-  | S0     | Connection attempt seen (SYN) but no reply                              |
-  | S1     | Connection established (SYN → SYN-ACK) but no final ACK from originator |
-  | S2     | Connection established and handshake completed, but no data sent        |
-  | S3     | Handshake completed, data sent in at least one direction                |
-  | SF     | Normal connection; data sent in both directions; closed cleanly         |
-  
-
-- We'll check the `tcp_conn.pcap` file using `tshark` (terminal-based version of Wireshark). Run:
-  ```
-  tshark -r tcp_conn.pcap
-  ```
-  - tcpdump will show full connection attempts (SYN → SYN-ACK → ACK).
-
-  Here's the same file using Wireshark GUI ().
-
-- Let's also check SSH logs on `/var/log/auth.log` running:
-  ```
-  grep "sshd" /var/log/auth.log
-  ```
-  - This filters the log to show only entries related to the SSH daemon.
- 
-  - A full TCP Connect scan using nmap -sT triggers SSH logs because the port is open and the entire TCP three-way handshake with the SSH service (running on port 22) is completed, that makes it look like a legitimate connection attempt to the system.
-
-  - Since the connection is fully established, the target service (e.g., SSH daemon) sees it as a real client attempting to connect.
-
-##
-
-### 2️⃣ TCP SYN Scan
 
 #### 👁️‍🗨️ Continue Monitoring on Ubuntu VM
 
 1. Run the commands listed above on Monitoring Setup.
-2. We´ll name the file `tcpdump` is going to write on: `tcp_syn.pcap`.
-
-##
-#### 🔎 Performing the Scan
-
-- On a terminal connected to the Kali VM, run the following command:
-
-  ```
-  sudo nmap -sS 10.0.1.X
-  ```
-  - `-sS` is the option used on Nmap to perform a **TCP SYN Scan**.
-  - To run this command root privileges are needed because Nmap sends raw SYN packets (a manually crafted TCP packet that has the SYN flag set to 1, it's used specifically to initiate a connection, only to see how the target responds). 
+2. We´ll name the file `tcpdump` is going to write on: `arp_spoofing.pcap`.
 
 ##
 
-### 📊 Results and Analisis After a TCP SYN Scan
-
-- Stop Zeek and tcpdump using Ctrl + C once the scan completes.
-
-**On Kali:**
-- Nmap only sends the SYN and receives SYN-ACK. It never completes the handshake.
-- Faster and more stealthy.
-
-- Output:
-
-**On Ubuntu:**
-- Zeek's log: `/opt/zeek/logs/current/conn.log`
-
-  - Zeek may still log them in conn.log, but as "incomplete connections" with a S0 state.
-
-- We'll check the `tcp_conn.pcap` file using `tshark` (terminal-based version of Wireshark). Run:
-  ```
-  tshark -r tcp_conn.pcap
-  ```
-  - tcpdump will show SYN packets from Kali but no ACKs back.
-  **Filters to apply:**
-  - tcp.flags.syn == 1 && tcp.flags.ack == 0 → shows SYNs
-
-  - tcp.flags.syn == 1 && tcp.flags.ack == 1 → shows SYN-ACKs
-
-  - tcp.flags.reset == 1 → shows RSTs (used in SYN scan tear-down)
-
-  Here's the same file using Wireshark GUI ().
-
-- Let's also check SSH logs on `/var/log/auth.log`:
-
-  - No entry is made in  `/var/log/auth.log`. SSH doesn’t consider it a real connection although the OS may still log it at a firewall or IDS level.
-
-
-##
-### Zeek conn.log Sample Comparison
-
-| Field    | TCP Connect Scan (-sT)   | TCP SYN Scan (-sS)       |
-| -------- | ------------------------ | ------------------------ |
-| State    | SF (connection finished) | S0 (SYN seen, no reply)  |
-| Duration | >0 seconds               | 0.000                    |
-| Notes    | Normal traffic           | Potential reconnaissance |
-
-##
-
-### 🔎 Why Do Attackers Scan for Open Ports?
-
-Understanding open ports and their associated services gives attackers valuable insight into how a system is structured and what vulnerabilities might exist.
-
-
-Each open port indicates a reachable service. These services may have vulnerabilities or weak configurations that can be exploited.
-
-* **Example:** If port 22 (SSH) is open, attackers may attempt brute-force login using tools like `hydra`. This is one of the attacks we´ll perform.
-* If port 80 or 443 is open, they may probe for outdated web server software or exposed admin panels.
-
-Identifying which ports are filtered helps map defensive systems like firewalls or IDS. It reveals the network's visibility and protection strategy.
-
-#### Service Fingerprinting
-This is a technique used to identify the specific software and version running on a given open port or network service.
-
-As we observed on the output after performing the scans, scanning tools can reveal software versions and configurations. With this information, attackers can:
-
-* Search for known vulnerabilities (Common Vulnerabilities and Exposures or CVEs) for specific versions.
-* Tailor **exploits** (a method or piece of code that takes advantage of a vulnerability) to maximize the chance of success.
-
-Once attackers know which ports are open, they can focus only on those, reducing their footprint and likelihood of detection.
-
-
-##
-
-### 🛟 2. SYN Flood using hping3
-##
-
-The gloal here is to simulate a **Denial-of-Service (DoS)** attack by overwhelming the Ubuntu VM (target) with a high volume of SYN packets. 
-
-#### 🛑 Denial of Service (DoS):
-
-- A type of cyberattack where an attacker deliberately tries to make a system, network, or service unavailable to its intended users. The goal is to overwhelm the target with traffic or requests so that it can no longer respond to legitimate users.
-
-#### 🚣‍♂️ SYN Flood
-
-A **SYN flood is a type of Denial-of-Service (DoS) attack** that targets the TCP connection handshake process. Its purpose is to exhaust the target system’s resources by initiating a massive number of incomplete TCP connections.
-
-**In a SYN flood attack:**
-
-- The attacker sends a large number of SYN packets to the target.
-
-- The target responds with SYN-ACKs (assuming the port is open), allocating resources (like memory or connection slots) for each potential connection.
-
-- The attacker never sends the final ACK, leaving the connections in a half-open state.
-- Services with open TCP ports (e.g., SSH on port 22 or HTTP on port 80) are targeted.
-- The attacker may often use **spoofed IP addresses** to make tracing difficult. 
-
-- If enough SYNs are sent in a short time, the server’s connection table fills up. Legitimate users can’t connect,  resulting in a **Denial of Service.**
-
-
-##
-#### 🧐 What Are Spoofed IP Addresses?
-These are fake or forged IP addresses that an attacker uses to disguise the true origin of a network packet. The attacker replaces the real source IP address in a packet's header with another one, often the IP of a trusted system or a random address. 
-
-By faking the source address, the attacker makes it hard to trace where the attack came from. **This technique is called IP Spoofing.**
-
-- In a **SYN flood DoS attack**, spoofed IPs are often used to send thousands of SYN packets to a server and make the server try to respond to fake clients (that never reply).
-
-This makes the attack harder to detect and defend against, because the connections seem to come from many random sources.
-
-##
-#### 📥 TCP Window Size and Its Role in a SYN Flood
-
-When sending a SYN packet, attackers can manually set a TCP window size value. Normally:
-
-- The TCP window size is advertised by the receiver to indicate how much data it can buffer before needing an acknowledgment (ACK).
-
-- In a SYN packet, the sender also includes a window size indicating how much data it’s prepared to receive (this is normal TCP behavior).
-
-🚣‍♂️ **In the context of a SYN flood:**
-
-- The attacker sets a very small window size (e.g.,`-w 64`) to appear as a client with limited buffer capacity.
-
-- This can trick the target into allocating additional memory buffers or managing more overhead per connection, especially on large volumes of SYNs.
-
-- Combined with thousands of SYNs, this can accelerate resource exhaustion on the server.
-
-💡 While it’s normal for SYN packets to advertise a window, setting small values on purpose (repeatedly and at high volume) is suspicious and may be flagged by IDS tools like Zeek.
-
-
-
-##
-### 🛟 SYN Flood Attack
-
-#### 👁️‍🗨️ Continue Monitoring on Ubuntu VM
-
-1. Run the commands listed above on Monitoring Setup.
-2. We´ll name the file `tcpdump` is going to write on: `tcp_flood.pcap`.
-
-#### 🔥 CPU / Memory Usage
-Run `top` or `htop` while the attack is happening to see how the system resources respond on real time to the attack. 
-
-
-##
 #### ⚔️ Performing the Attack:
+
+- Run `ip route` on any VM to verify the default gateway:
+
+**IP Fowarding:**
 - On a terminal connected to the Kali VM, run the following command:
-```
-hping3 -c 10000 -d 120 -S -w 64 -p 80 --flood --rand-source 10.0.1.X
-```
+  ```
+  echo 1 | sudo tee /proc/sys/net/ipv4/ip_forward
+  ```
+  **Explanation:**
 
-**What does this mean?:**
+  - `echo 1` : Outputs the value 1 to standard output. In this context, 1 means "enable" (as in enabling a setting).
 
-With this command, we are crafting custom SYN packets. This is known as **packet crafting**, because we´re bypassing the standard OS network stack and manually setting TCP header fields.
+  - `|` : The pipe sends the output of echo 1 (which is just 1) as input to the next command, sudo tee.
 
-  | Flag            | Meaning                                                            |
-  | --------------- | ------------------------------------------------------------------ |
-  | `-c 10000`      | Send 10,000 packets                                                |
-  | `-d 120`        | Each packet contains 120 bytes of data                             |
-  | `-S`            | Set the SYN flag (initiates TCP connection – like a SYN scan)      |
-  | `-w 64`         | Set the TCP window size to 64 (see explanation above)              |
-  | `-p 80`         | Target port 80 (commonly used for HTTP)                            |
-  | `--flood`       | Send packets as fast as possible without waiting for replies       |
-  | `--rand-source` | Randomize the source IP address of each packet **(spoofed addresses)** |
-  | `10.0.1.X`      | Target private IP address of the Ubuntu VM                         |
+  - `sudo tee /proc/sys/net/ipv4/ip_forward`: 
 
-⚠️  **Important:** Using `-c` (count) limits the amount of packets being sent. Without it, the `--flood` option would tell `hping3` to send packets as fast as possible, indefinitely. The flood will only stop when: 
+    - Uses `sudo` to run the command with superuser privileges (required to modify system settings).
 
-- You manually interrupt it (e.g., with Ctrl+C)
-- The system kills the process (e.g., due to resource exhaustion)
+    - `tee` is used to write input to a file (in this case, /proc/sys/net/ipv4/ip_forward).
 
-This approach is more aggresive and can trigger security alerts or bandwidth limits on cloud platforms like Azure.
+    - The file /proc/sys/net/ipv4/ip_forward is a special kernel parameter in Linux. Writing 1 to this file **enables packet forwarding on the system**.
+
+
+**Run arpspoof:** 
+- After enabling ip fowarding, run the following command:
+
+  ```
+  sudo arpspoof -i eth0 -t 10.0.1.5 10.0.1.1
+  sudo arpspoof -i eth0 -t 10.0.1.1 10.0.1.5
+
+  ```
+  **What it does:**
+
+    - `sudo`: needs root to modify ARP tables.
+
+    - `arpspoof` : tool that sends fake ARP responses.
+
+    - `-i eth0` :  the network interface being used.
+
+    - `10.0.1.5` : private ip from the Ubuntu VM.
+
+    - `10.0.1.1` : default gateway.
+
+
+  **Why two commands?**
+
+    - **First one:** tell the victim “Hey, I’m the gateway”
+
+    - **Second one:** tell the gateway “Hey, I’m the victim”
+
+  💡 This way, both sides send their traffic to the Kali VM, thinking it's the other.
+
+
+- Now the Kali VM is in the middle, and can sniff traffic with:
+  ```
+  sudo tcpdump -i eth0
+  ```
+
+**On the Victim:**
+- On a terminal connected to the Ubuntu VM, try pinning google.com and the Kali VM, this is to generate ARP traffic, to analyze later:
+
+  ```
+  ping 10.0.1.4 -c 2
+  ```
+  ```
+  ping 8.8.8.8 -c 2
+  ```
 
 
 ##
-**Why Would the Packets Contain any Data?** (`-d 120`)
-
-A SYN packet (the first step of a TCP handshake) does not contain a data payload. It typically only carries the TCP header and control flags (like the SYN flag) and no actual content.
-
-By using `-d 120`, we are adding 120 bytes of data to each SYN packet. 
-
- **Why would an attacker do this?**
-
-- To increase the size of the packet and consume more bandwidth.
-
-- To try to bypass basic firewalls or detection systems that expect SYNs to be small.
-
-- To stress the target system more, as it must allocate resources to handle larger packets.
-
-##
-#### What Happens as You Increase the Number of Packets?
-When launching a SYN flood attack, increasing the number of packets (e.g., using `-c 10000` or `--flood`) has direct consequences on both the attacking and target systems.
-
-#### 📤 On the Attacker Side (Kali VM):
-- **Increased CPU and bandwidth usage:** Generating and transmitting a large number of crafted packets consumes system resources.
-
-- **Greater risk of packet drops:** If the sending rate is too high, some packets might be dropped before leaving the interface.
-
-- **Easier to detect:** Flooding traffic can trigger alerts in intrusion detection systems or rate-limiters on the network.
-
-#### 📥 On the Target Side (Ubuntu VM):
-- **TCP connection queue fills up:** The victim responds to each SYN with a SYN-ACK and waits for an ACK that never comes. These incomplete connections sit in a backlog queue.
-
-- **Resource exhaustion:** Each half-open connection consumes memory and CPU. The backlog queue fills up.
-
-- **Denial of Service occurs:** Legitimate users can't connect to services like SSH or HTTP.
-
-- **Performance degradation:** Under high loads, the VM may experience increased latency, service crashes, or become unresponsive.
-
-
-##
-### 📊 Results and Analisis After a SYN Flood
-
-- Stop Zeek and tcpdump using Ctrl + C once the attack completes.
+### 📊 Results and Analysis After an ARP Spoofing
+- Stop Zeek and tcpdump using Ctrl + C after pinning .
 
 #### Attacker's Perspective:
+
+**Outputs:**
+
+
+
+#### Target's Perspective:
 **Output:**
 
-#### Target's Perspective: 
-
-#### How to Know if the SYN Flood Caused a DoS (Denial of Service)
-After launching the  attack, we want to observe whether the target system (Ubuntu VM) becomes unable to respond to legitimate traffic. We can analise the generated logs to reach an answer:
-
-- **Zeek's log: `/opt/zeek/logs/current/conn.log`**
-
-  Zeek logs summarize flow-based activity. In a SYN flood, the attacker sends a large number of SYN packets, but doesn't complete the handshake. Zeek marks those as suspicious one-sided connections.
-
-    - Count of repeated connections from the same source IP
-
-    - Short durations
-
-    - Unfinished handshakes (state S0 = "SYN sent, no reply")
-  
-
-- **Tcpdump pcap file: `syn_flood.pcap`**
-  ```
-  tshark -r tcp_conn.pcap
-  ```
-  - A huge number of TCP packets with:
-
-    - Only the SYN flag set
-
-    - Source: Kali VM IP
-
-    - Destination port: target of your attack (e.g., 80)
-
-  - Very few or no SYN-ACK responses
-
-  - No completed 3-way handshakes
-
-- Using Wireshark, we can filter: 
-  ```
-  tcp.flags.syn == 1 and tcp.flags.ack == 0
-  ```
-  - This shows only pure SYN packets — typical of a SYN flood.
-
-  - If the victim tried to respond:
-
-  ```
-  tcp.flags.syn == 1 and tcp.flags.ack == 1
-  ```
-  - These are SYN-ACKs. If you see a lot of SYNs and no matching ACKs, you know the handshake wasn’t completed.
-
-
-- **Connection Table: SYN_RECV Overload**
-
-  Use the following command to count how many half-open connections exist:
-  ```
-  netstat -an | grep SYN_RECV | wc -l
-  ```
-    - If this number is in the hundreds or thousands, the system is struggling to complete handshakes, meaning it’s likely under SYN flood conditions.
+**Logs and Filters:**
 
 
 ##
-### 🔐 3. Brute-force SSH using Hydra
+### 🔐 2. Brute-force SSH using Hydra
 ##
 
 The goal is to simulate a brute-force login attack by trying multiple passwords against the SSH service on the Ubuntu VM.
 
-#### 🔨 What is a Brute-force Attack?
+#### What is a Brute-force Attack?
 
 A brute-force attack is a trial-and-error method used to gain unauthorized access to a system by systematically trying a large number of possible username and password combinations. The goal is to eventually guess the correct credentials through persistence.
 
@@ -690,4 +371,3 @@ Signs of brute-force:
   ```
   tcp.port == 22
   ```
-
