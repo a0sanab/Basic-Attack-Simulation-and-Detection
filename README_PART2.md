@@ -337,7 +337,8 @@ This filtered view makes it easier to spot abnormal ARP behavior, such as forged
 - In addition to viewing the ARP traffic directly in the terminal, transferring the `.pcap` file locally and opening it on Wireshark can provide a clearer visualization of the analized log.
 
 - The screenshot below shows the same ARP spoofing exchange—highlighting how the victim believes the gateway (`10.0.1.1`) is at the attacker's MAC address.
-
+  
+![ARP spoofing exchange—Wireshark](images/wireshark_arp_filter.png)
 
 **Analyzing the Output:**
 
