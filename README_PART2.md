@@ -154,14 +154,14 @@ IP forwarding allows the attacker (Kali VM) to act like a router — forwarding 
 
 ##
 
-#### 👁️‍🗨️ Continue Monitoring on Ubuntu VM
+### 👁️‍🗨️ Continue Monitoring on Ubuntu VM
 
 1. Run the commands listed above on Monitoring Setup.
 2. We´ll name the file `tcpdump` is going to write on: `arp_spoofing.pcap`.
 
 ##
 
-#### ⚔️ Performing the Attack:
+### ⚔️ Performing the Attack:
 
 - Run `ip route` on any VM to check the ip of the default gateway:
 
@@ -218,13 +218,9 @@ IP forwarding allows the attacker (Kali VM) to act like a router — forwarding 
   ```
   sudo tcpdump -i eth0
   ```
-
-
 ##
-### 📊 Results and Analysis After an ARP Spoofing
-
-**On the Victim:**
-  - On a terminal connected to the Ubuntu VM, try pinning google.com and the Kali VM, this is to generate ARP traffic, to analyze later:
+#### While Running the Attack...
+  - On a terminal connected to the Ubuntu VM, try pinging both the Kali VM and Google's DNS (8.8.8.8). This helps generate ARP traffic that can be captured and analyzed later.
   
     ```
     ping 10.0.1.4 -c 2
@@ -232,7 +228,9 @@ IP forwarding allows the attacker (Kali VM) to act like a router — forwarding 
     ```
     ping 8.8.8.8 -c 2
     ```
-  - We can also use this to verify that the IP Fowarding with Kali is properly working:
+  - These pings also help confirm that IP forwarding on Kali is working correctly. If the Ubuntu VM is still able to reach external addresses like 8.8.8.8, it means Kali is successfully forwarding packets between the victim and the gateway. 
+  
+
     ```
     azureuser@ubuntu-vm:~$ ping 10.0.1.4 -c 2
     PING 10.0.1.4 (10.0.1.4) 56(84) bytes of data.
@@ -250,9 +248,14 @@ IP forwarding allows the attacker (Kali VM) to act like a router — forwarding 
     2 packets transmitted, 2 received, 0% packet loss, time 1002ms
     rtt min/avg/max/mdev = 1.842/1.884/1.926/0.042 ms
     ```
+
+
+##
+### 📊 Results and Analysis After an ARP Spoofing
+
 - Stop Zeek and tcpdump using Ctrl + C after pinning .
 
-#### Attacker's Perspective:
+### Attacker's Perspective:
 
   **ARP Spoofing Output:**
   
@@ -265,10 +268,10 @@ IP forwarding allows the attacker (Kali VM) to act like a router — forwarding 
   0:d:3a:8f:cc:a8 12:34:56:78:9a:bc 0806 42: arp reply 10.0.1.1 is-at 0:d:3a:8f:cc:a8
   0:d:3a:8f:cc:a8 12:34:56:78:9a:bc 0806 42: arp reply 10.0.1.1 is-at 0:d:3a:8f:cc:a8
   0:d:3a:8f:cc:a8 12:34:56:78:9a:bc 0806 42: arp reply 10.0.1.1 is-at 0:d:3a:8f:cc:a8
- 
+
   ```
   
-  Let’s break this line down:
+  **Let’s break this line down:**
   ```
   0:d:3a:8f:cc:a8 12:34:56:78:9a:bc 0806 42: arp reply 10.0.1.1 is-at 0:d:3a:8f:cc:a8
   ```
@@ -281,6 +284,8 @@ IP forwarding allows the attacker (Kali VM) to act like a router — forwarding 
   | `42`                             | Packet length in bytes                                        |
   | `arp reply`                      | Type of ARP message                                           |
   | `10.0.1.1 is-at 0:d:3a:8f:cc:a8` | ARP message content: "`10.0.1.1` is at the (attacker’s) MAC"  |
+
+  - This poisons the victim’s ARP cache and causes traffic intended for the gateway to be redirected through the attacker — **enabling a Man-in-the-Middle attack.**
   
   **Kali VM's Real MAC Address**:
   ```
@@ -292,10 +297,25 @@ IP forwarding allows the attacker (Kali VM) to act like a router — forwarding 
   
   This command's output confirms that the MAC address of the Kali VM is `0:d:3a:8f:cc:a8`.
 
-#### Target's Perspective:
+### Target's Perspective:
 
-**Analyzing `arp_spoofing.pcap`:**
- - Using `tshark`, `-Y "arp"` filters packets captured on `arp_spoofing.pcap`. Only showing those that belong to ARP protocol:
+**Analyzing `arp_spoofing.pcap` and Filtering ARP Packets with `tshark`:**
+- To analyze the ARP Spoofing attack from the victim’s point of view, we start by inspecting only the ARP packets captured in the `.pcap` file. This helps us focus on the address resolution activity during the attack.
+
+We use the following command:
+```
+tshark -r arp_spoofing.pcap -Y "arp"
+```
+**Explanation:**
+
+- `-r` arp_spoofing.pcap: Reads the packet capture file.
+
+- `-Y "arp"`: Displays only the packets that belong to the ARP protocol.
+
+This filtered view makes it easier to spot abnormal ARP behavior, such as forged replies.
+
+**Output:**
+
    
   ```
   azureuser@ubuntu-vm:~$ tshark -r arp_spoofing.pcap -Y "arp"
@@ -308,11 +328,32 @@ IP forwarding allows the attacker (Kali VM) to act like a router — forwarding 
   769 100.544278 12:34:56:78:9a:bc → Microsof_2f:f5:00 ARP 42 10.0.1.1 is at 12:34:56:78:9a:bc
   863 113.011002 Microsof_2f:f5:00 → Broadcast    ARP 42 Who has 10.0.1.4? Tell 10.0.1.5
   865 113.011502 12:34:56:78:9a:bc → Microsof_2f:f5:00 ARP 42 10.0.1.4 is at 12:34:56:78:9a:bc
- 1229 157.865869 Microsof_2f:f5:00 → 12:34:56:78:9a:bc ARP 42 Who has 10.0.1.4? Tell 10.0.1.5
- 1230 157.866846 12:34:56:78:9a:bc → Microsof_2f:f5:00 ARP 42 10.0.1.4 is at 12:34:56:78:9a:bc
+  1229 157.865869 Microsof_2f:f5:00 → 12:34:56:78:9a:bc ARP 42 Who has 10.0.1.4? Tell 10.0.1.5
+  1230 157.866846 12:34:56:78:9a:bc → Microsof_2f:f5:00 ARP 42 10.0.1.4 is at 12:34:56:78:9a:bc
  ```
 
-- The PCAP log shows successful ARP spoofing in action. The victim (10.0.1.5) repeatedly broadcasts ARP requests for the IPs 10.0.1.1 (gateway) and 10.0.1.4 (attacker). The attacker responds with forged ARP replies, claiming that 10.0.1.1 is at the attacker’s fake MAC address (12:34:56:78:9a:bc). This poisons the victim’s ARP cache and causes traffic intended for the gateway to be redirected through the attacker — enabling a Man-in-the-Middle attack.
+**Wireshark Evidence**
+
+- In addition to viewing the ARP traffic directly in the terminal, transferring the `.pcap` file locally and opening it on Wireshark can provide a clearer visualization of the analized log.
+
+- The screenshot below shows the same ARP spoofing exchange—highlighting how the victim believes the gateway (`10.0.1.1`) is at the attacker's MAC address.
+
+
+**Analyzing the Output:**
+
+
+From the victim’s perspective (`10.0.1.5`), several ARP requests are made for:
+
+- `10.0.1.4`: the attacker's IP.
+
+- `10.0.1.1`: the legitimate gateway IP.
+
+In each case, the replies come from the MAC address `12:34:56:78:9a:bc`, which responds on behalf of both `10.0.1.4` and `10.0.1.1`.
+
+- Seeing the same MAC address associated with two different IPs (gateway and attacker) is a major red flag. **MAC addresses are supposed to be unique identifiers tied to a single physical or virtual network interface. This duplication is a key indicator of ARP spoofing.**
+
+
+- By poisoning the victim’s ARP cache with this fake mapping, the attacker tricks the victim into sending traffic meant for the gateway to the attacker’s machine instead. **This enables a Man-in-the-Middle (MITM) attack**, allowing the attacker to intercept or forward the traffic at will.
 
 
 ##
