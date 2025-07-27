@@ -1,6 +1,6 @@
 # 🛠️ Part 2: Simulating Attacks and Analyzing Traffic
 
-This second part of the project uses the infrastructure created in [Part 1: Building the Cyber Lab Environment](README_PART1.md) to demonstrate several real-world cyberattacks in a controlled Azure environment, showcasing both offensive techniques (from a Kali Linux virtual machine) and monitoring/detection (on an Ubuntu VM using tools like Zeek, tcpdump and tshark). **These exercises are designed for educational purposes only.**
+This second part of the project uses the infrastructure created in [Part 1: Building the Cyber Lab Environment](README_PART1.md) to demonstrate several cyberattacks in a controlled Azure environment, showcasing both offensive and monitoring/detection techniques. **These exercises are designed for educational purposes only.**
 
 ---
 
@@ -9,6 +9,7 @@ This second part of the project uses the infrastructure created in [Part 1: Buil
     - `arspoof` :
     - `hydra`: for brute force attacks on services like SSH or FTP
     - `dns2tcp`:
+    - `netcat`:
 
   - **On Ubuntu (Monitor/Target)**:
     - ####  `tcpdump` :
@@ -156,8 +157,10 @@ IP forwarding allows the attacker (Kali VM) to act like a router — forwarding 
 
 ### 👁️‍🗨️ Continue Monitoring on Ubuntu VM
 
-1. Run the commands listed above on Monitoring Setup.
+1. Run the commands listed above on Monitoring Setup, minus Zeek.
 2. We´ll name the file `tcpdump` is going to write on: `arp_spoofing.pcap`.
+
+> _Zeek, focuses on Layer 3 (network) and Layer 4+ (transport/application) protocols, whereas ARP is a Layer 2 protocol (data link layer). This means ARP traffic is not visible or analyzed by default in Zeek, unless it's explicitly enabled or scripted for._
 
 ##
 
@@ -253,7 +256,7 @@ IP forwarding allows the attacker (Kali VM) to act like a router — forwarding 
 ##
 ### 📊 Results and Analysis After an ARP Spoofing
 
-- Stop Zeek and tcpdump using Ctrl + C after pinning .
+- Once you’ve finished generating traffic (e.g., pinging), stop `tcpdump` with `Ctrl + C`.
 
 ### Attacker's Perspective:
 
@@ -268,6 +271,7 @@ IP forwarding allows the attacker (Kali VM) to act like a router — forwarding 
   0:d:3a:8f:cc:a8 12:34:56:78:9a:bc 0806 42: arp reply 10.0.1.1 is-at 0:d:3a:8f:cc:a8
   0:d:3a:8f:cc:a8 12:34:56:78:9a:bc 0806 42: arp reply 10.0.1.1 is-at 0:d:3a:8f:cc:a8
   0:d:3a:8f:cc:a8 12:34:56:78:9a:bc 0806 42: arp reply 10.0.1.1 is-at 0:d:3a:8f:cc:a8
+  ...
 
   ```
   
@@ -369,112 +373,189 @@ A brute-force attack is a trial-and-error method used to gain unauthorized acces
 
 - In the context of SSH (Secure Shell), a brute-force attack attempts to log in to the target machine by repeatedly trying different passwords for a known username, often using a wordlist that contains thousands or millions of common or leaked passwords.
 
-- These attacks are **noisy, easily detectable**, and can be mitigated with rate-limiting, account lockout mechanisms, or intrusion detection systems.
+- These attacks are **noisy, easily detectable** and often blocked but **still effective in misconfigured systems.**
+
+- and can be mitigated with rate-limiting, account lockout mechanisms, or intrusion detection systems.
 
 ##
 #### 📄 Password List
-Before running the attack, ensure you have access to a password list. In this case, we'll use the popular **rockyou.txt** wordlist. This is a widely used wordlist that contains millions of the most common passwords.
+Before launching the brute-force attack, it's essential to have a password wordlist available. In this lab, we use a **custom wordlist** that is automatically created on the **Kali Linux VM** during provisioning. This wordlist is deployed via the Ansible playbook and saved at `/opt/sample-passwords.txt`.
 
-It originated from a real-world data breach and is commonly used in penetration testing and brute-force attacks. It is included in Kali Linux by default, but it's compressed.
-
-To prepare it for use, **decompress it** with:
-```
-sudo gunzip /usr/share/wordlists/rockyou.txt.gz
-```
-
-Once decompressed, it will be available at:
-```
-/usr/share/wordlists/rockyou.txt
-```
+The file includes a mix of weak, commonly used passwords and some custom entries. **Including the actual SSH password** configured for the Ubuntu target, ensuring the attack can succeed within a few attempts.
 
 ##
 
-#### 👁️‍🗨️ Continue Monitoring on Ubuntu VM
+### 👁️‍🗨️ Continue Monitoring on Ubuntu VM
 
 1. Run the commands listed above on Monitoring Setup.
 2. We´ll name the file `tcpdump` is going to write on: `brute_force.pcap`.
 
 ##
-#### ⚔️ Performing the Attack:
+### ⚔️ Performing the Attack:
 
 On a terminal connected to the Kali VM, run the following command:
 ```
-hydra -l azureuser -P /usr/share/wordlists/rockyou.txt ssh://10.0.1.X
+hydra -l azureuser -P /opt/sample-passwords.txt ssh://20.185.217.167
 ```
-Hydra attempts many SSH login attempts in rapid succession using common passwords. If any attempt succeeds, it will be shown in the output.
+- `20.185.217.167` is the public ip address of the Ubuntu VM. 
+- Hydra will attempt many SSH login attempts in a rapid succession using the passwords from the wordlist. If any attempt succeeds, it will be shown in the output.
 
 **Command Breakdown:**
 
-| Flag             | Meaning                                                                  |
-| ---------------- | ------------------------------------------------------------------------ |
-| `-l azureuser`   | Attempt to login as user "azureuser"                                     |
-| `-P rockyou.txt` | Use the popular rockyou wordlist (common passwords) as the password list |
-| `ssh://...`      | Specifies the protocol (SSH) and the target IP address                   |
+| Flag                            | Meaning                                                                  |
+| ------------------------------- | ------------------------------------------------------------------------ |
+| `-l azureuser`                  | Attempt to login as user "azureuser"                                     |
+| `-P /opt/sample-passwords.txt`  | Custom wordlist                                                          |
+| `ssh://...`                     | Specifies the protocol (SSH) and the target IP address                   |
+
+> **Note:** In this example, we're targeting the public IP address of the Ubuntu VM (20.185.217.167) to simulate an external attacker scenario. However, Hydra could also be used against the private IP address (10.0.1.5).
+
+> ⚠️**Important (Azure Cloud Consideration):**
+When running brute-force tools like Hydra in cloud environments such as Azure, limiting the number of login attempts is important to avoid triggering automated security responses. Azure may temporarily block access or disable the VM's SSH service if it detects aggressive login behavior that resembles abuse or malicious traffic. This is why the custom wordlist doesn't have that many entries. The rate of attempts can be controlled using flags like -t (number of parallel connections). 
+
 
 
 ##
 ### 📊 Results and Analysis After a Brute Force Attack
 - Stop Zeek and tcpdump using Ctrl + C once the attack completes.
 
-#### Attacker's Perspective:
+### Attacker's Perspective:
 
-- Hydra will display real-time output of the attempts being made.
+The following output shows the result of launching a brute-force attack using Hydra from the Kali VM:
 
-- If the correct password is found, it will be clearly shown:
-
-- Even if unsuccessful, you’ll see how many passwords were tried and how long it took.
-
-#### Target's Perspective:
-
-After the attack, we analyze the logs and traffic to detect signs of brute-force behavior. This helps confirm that our monitoring setup can detect such attacks.
-
-
-  #### Detecting SSH Brute Force Using Logs and Packet Capture
-- Zeek's log: /opt/zeek/logs/current/conn.log
-
-- Zeek tracks all connection attempts, including failed ones. Signs of brute-force include:
-
-  - Numerous short-lived connections from the same source IP (Kali)
-
-  - Repeated connection attempts to port 22 (SSH)
-
-  - State field values such as:
-
-    - S0 (SYN sent, no reply)
-
-    - SF (connection established and finished normally, may happen once password is guessed)
-
-    - RSTO or RSTR (indicates resets from either side)
-
-  Sample Zeek filter:
+  **Hydra's Output:**
   ```
-  cat conn.log | zeek-cut id.orig_h id.resp_p proto service duration conn_state
-  ```
-  - Many entries with service ssh, same origin IP, short durations, failed connections.
-
-#### SSH Authentication Log (Ubuntu VM):
-- Check system logs to see login attempts:
-  ```
-  sudo cat /var/log/auth.log | grep sshd
-  ```
-Signs of brute-force:
-
-
-
-#### Tcpdump pcap file: brute_force.pcap
-
-- Analyze packet captures using Wireshark or TShark:
-  ```
-  tshark -r brute_force.pcap
+  ┌──(azureuser㉿kali)-[~]
+  └─$ hydra -l azureuser -P /opt/sample-passwords.txt ssh://20.185.217.167
+  Hydra v9.5 © 2023 by van Hauser/THC & David Maciejak - Please do not use in military or secret service organizations, or for illegal purposes (this is non-binding, these *** ignore laws and ethics anyway).
+  Hydra (https://github.com/vanhauser-thc/thc-hydra) starting at 2025-07-21 21:59:20
+  [WARNING] Many SSH configurations limit the number of parallel tasks, it is recommended to reduce the tasks: use -t 4
+  [DATA] max 16 tasks per 1 server, overall 16 tasks, 26 login tries (l:1/p:26), ~2 tries per task
+  [DATA] attacking ssh://20.185.217.167:22/
+  [22][ssh] host: 20.185.217.167   login: azureuser   password: Cyber@1234xyz
+  1 of 1 target successfully completed, 1 valid password found
+  Hydra (https://github.com/vanhauser-thc/thc-hydra) finished at 2025-07-21 21:59:29
   ```
 
-  - Multiple TCP connections to port 22 from the same IP
+  To better visualize the result, here’s a screenshot of the terminal showing the exact moment the password was found:
 
-  - Several failed authentication attempts in SSH protocol stream
+  ![Hydra Success](images/hydra_success.png)
 
-  - Short durations and quick re-establishing of connections
+  - The attack was successful: **Hydra correctly identified the SSH password `Cyber@1234xyz`** for the user `azureuser` after trying several entries from the custom wordlist.
 
-- Wireshark filter to focus on SSH traffic:
-  ```
-  tcp.port == 22
-  ```
+  - The success message `1 valid password found` confirms that the credentials were compromised.
+
+
+
+### Target's Perspective:
+
+After the attack, we analyze the logs and traffic to detect signs of brute-force behavior.
+
+#### Detecting SSH Brute Force Using Logs and Packet Capture
+
+#### Analyzing Zeeks's Logs:
+
+ `ssh.log`, records all attempted connections to that service.
+
+ This command will filter `ssh.log` to show connection attempts with a cleaner and easier to read format:
+
+ ```
+ zeek-cut ts id.orig_h id.resp_h user auth_success < ssh.log | while read line; do
+  ts=$(echo "$line" | awk '{print $1}')
+  rest=$(echo "$line" | cut -d ' ' -f2-)
+  echo "$(date -d @"$ts" "+%Y-%m-%d %H:%M:%S") $rest"
+ done
+ ```
+
+ **What it does:**
+  - `zeek-cut ts id.orig_h id.resp_h user auth_success < ssh.log`: Extracts specific fields from the `ssh.log` file: 
+    
+    - `ts`: the timestamp (in UNIX epoch format with fractional seconds) 
+    - `id.orig_h`: source IP (the initiator of the SSH connection)
+    - `id.resp_h`: destination IP (the SSH server) 
+    - `user`: the username used in the login attempt
+    - `auth_success`: whether authentication was successful (`T` for true, `F` for false, `-` if not determined)
+ 
+  - `while read line; do ... done`: Loops through each line of output.
+  - `ts=$(...)`: Extracts the timestamp field from each line. 
+  - `date -d @"$ts"`: Converts the UNIX timestamp to an easier to read format (`YYYY-MM-DD HH:MM:SS`).
+
+ #### Output:
+
+  - A screenshot of the filtered `ssh.log` output is included for visual reference:
+
+  ![Zeek SSH Log](images/zeek_ssh_log.png)
+
+  - Here’s what we see in the output:
+  
+  | Timestamp           | Source IP      | Destination IP | Username | Auth Success |
+  | ------------------- | -------------- | -------------- | -------- | ------------ |
+  | 2025-07-21 21:59:21 | 20.169.229.158 | 10.0.1.5       | -        | T            |
+  | ...                 | 20.169.229.158 | 10.0.1.5       | -        | -            |
+  | ...                 | 20.169.229.158 | 10.0.1.5       | -        | F            |
+  | ...                 | 20.169.229.158 | 10.0.1.5       | -        | F            |
+  | ...                 | 20.169.229.158 | 10.0.1.5       | -        | F            |
+
+
+#### Output Analysis:
+
+- The attacker (`20.169.229.158`) made around 17 SSH login attempts against the victim VM (`10.0.1.5`).
+
+- One line shows a `T`, meaning **a successful login attempt occurred**, this confirms the password was eventually guessed.
+
+- Some entries have `auth_success` as `-`, likely indicating that Zeek could not determine the result of the login attempt (often due to early connection termination or incomplete sessions).
+
+- All attempts occurred around the same second (`21:59:21`), suggesting an **automated attack with very fast consecutive attempts**, characteristic of **brute-force behavior.** 
+
+
+
+#### Tcpdump pcap file: `brute_force.pcap`
+
+To investigate the attack from the perspective of raw network traffic, we analyze the `.pcap` file captured with `tcpdump` using the following `tshark` command:
+
+```
+tshark -r brute_force.pcap -Y "tcp.dstport == 22 and tcp.flags.syn == 1" -T fields -e ip.src | sort | uniq -c | sort -nr
+```
+| Component  | Explanation                                                                                                                                |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `-Y "tcp.dstport == 22 and tcp.flags.syn == 1"` | Applies a **display filter** to show only TCP SYN packets destined for port 22 (SSH). These packets represent **new SSH connection attempts**. |
+| `-T fields -e ip.src` | Outputs only the **source IP address** field from each matching packet |
+| `sort`     | Sorts the list of source IPs **alphabetically**. This is necessary for `uniq` to properly group identical lines together.                  |
+| `uniq -c`  | Counts the number of **consecutive repeated lines** (in this case, how many times each IP appears). It outputs the count alongside the IP. |
+| `sort -nr` | Sorts the output **numerically** in **reverse order** so that IPs with the **highest number of connection attempts appear first**.         |
+
+- This combination of `sort`, `uniq -c`, and `sort -nr` helps defenders **quickly identify the most aggressive sources**, which is key in detecting brute-force attempts or scanning activity.
+
+#### Output Analysis:
+```
+17   20.169.229.158
+```
+
+This tells us:
+
+- The IP `20.169.229.158` (Kali attacker VM) sent **17 SYN packets to TCP port 22** on the monitored machine.
+
+- Since a SYN packet is used to initiate a TCP connection, this count reflects **17 separate SSH connection attempts**. This corroborates the brute-force behavior observed in the `Zeek` logs and `Hydra` output.
+
+
+
+##
+### 🔁 3. Remote Shell Attack (Reverse Shell) using Netcat
+##
+
+#### What is a Reverse Shell?
+A **reverse shell** is a connection initiated from the victim **back to the attacker**. This is useful for attackers because:
+- Many firewalls allow outbound connections but block inbound ones. 
+- The attacker sets up a "listener" and waits for the victim to connect.
+
+##
+#### 🎣 Why Would the Victim Iniciate the Connection?
+In a real-world attack, the attacker might:
+
+- Send a malicious script or attachment via phishing email
+
+- Trick the user into downloading a "game" or "update"
+
+- Exploit a vulnerability in a web server
+
+In our case, we simulate this by manually running the reverse shell on the victim.
