@@ -644,9 +644,11 @@ azureuser@ubuntu-vm:~$
 
 - The prompt `azureuser@ubuntu-vm:~$` confirms that the attacker now has an **interactive shell on the victim's system**.
 
-_A screenshot is included below to provide a visual reference of this interaction:_
-
-![Reverse Shell Connection Established](images/kali_reverse_shell1.png)
+<p>
+  <em>A screenshot is included below to provide a visual reference of this interaction:</em><br>
+  <br>
+  <img src="images/kali_reverse_shell1.png" alt="Reverse Shell Connection Established" width="400"/>
+</p>
 
 
 - This output confirms a **successful compromise**. The attacker now has **remote access to the victim’s system**, with the ability to execute commands as if they were sitting at the machine. This level of access poses a **severe security risk** — allowing the attacker to explore the file system, exfiltrate data, install malware, or escalate privileges.
@@ -672,7 +674,7 @@ uname -a
 
 On the victim’s machine, once the reverse shell command is executed, the terminal appears to freeze or become unresponsive:
 
- ![Victim's Unresponsive Shell](images/reverse_shell_victim.png)
+ <img src="images/reverse_shell_victim.png" alt="Victim's Unresponsive Shell" width="500"/>
 
 There’s **no output**, no confirmation, and no indication that a remote session has been initiated. This is because the input/output streams of the shell have been **redirected to the attacker’s system**.
 
@@ -705,8 +707,8 @@ This extracts:
 - `duration`: Duration of the connection in seconds
 
 #### Interpreting the Output:
-
- ![Zeek's Reverse Shell Output](images/reverse_shell_zeek.png)
+ 
+<img src="images/reverse_shell_zeek.png" alt="Zeek's Reverse Shell Output" width="600"/>
 
 Here is a sample of the output (shown in the image above):
 
