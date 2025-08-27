@@ -6,10 +6,28 @@ This second part of the project uses the infrastructure created in [Part 1: Buil
 
 ### 🧰 Tools Involved
   - **On Kali Linux (Attacker)**:
-    - `arspoof` :
-    - `hydra`: for brute force attacks on services like SSH or FTP
-    - `dns2tcp`:
-    - `netcat`:
+    - #### `arspoof` :
+      * Part of the **dsniff** suite, used for **ARP spoofing / poisoning attacks**. 
+      * It tricks a target machine into associating the attacker’s MAC address with the IP of another device (usually the gateway).
+      * This allows the attacker to intercept, modify, or drop network traffic between victim and gateway (Man-in-the-Middle attack).
+      * In our project, it’s the key tool for simulating ARP spoofing to capture or manipulate traffic.
+
+    - #### `hydra`: 
+      * For brute force attacks on services like SSH or FTP.
+
+    - #### `dns2tcp`:
+      * A tunneling tool that allows data to be sent over **DNS queries and responses**.
+      * Useful when traditional outbound traffic (e.g., HTTP, SSH) is blocked by firewalls, but DNS is still allowed.
+      * Works by encoding TCP traffic into DNS packets, then decoding it on the other side.
+      * In our case, we’ll use it to simulate **data exfiltration** through DNS tunneling.
+
+    - #### `netcat`:
+      * Can be used to create TCP/UDP connections, transfer files, and even spawn shells.
+      * In penetration testing, it’s commonly used for: 
+        * **Reverse shells**: attacker gets remote access into a victim machine.
+        * **Port scanning**: check which services are open. 
+        * **Simple chat/file transfer** between two machines.
+      * We’ll demonstrate its use for establishing a **remote shell session** from victim to attacker.
 
   - **On Ubuntu (Monitor/Target)**:
     - ####  `tcpdump` :
@@ -78,7 +96,7 @@ This practice is especially important in labs like this one, where the goal is t
 - On a terminal connected to the Ubuntu VM, we run:
 
   ```
-  sudo tcpdump -i eth0 -w tcp_conn.pcap
+  sudo tcpdump -i eth0 -w arp_spoofing.pcap
   ```
   - We'll name each output file based on the scan or attack being performed, so that the logs are organized and easier to identify later.
 
@@ -86,30 +104,44 @@ This practice is especially important in labs like this one, where the goal is t
 
   - `-i eth0` → Listen on interface **eth0** (the VM’s main network interface. We can always check using `ip link` or `ifconfig`, to be sure which one is actively transmitting and receiving data).
 
-  - `-w tcp_conn.pcap` → Write the raw captured packets directly to a file named `tcp_conn.pcap` (`tshark`, Wireshark's terminal version can also be used to do this). 
+  - `-w arp_spoofing.pcap` → Write the raw captured packets directly to a file named `arp_spoofing.pcap` (`tshark`, Wireshark's terminal version can also be used to do this). 
 
   - No filters applied → Captures all traffic on that interface.
-  -  `tcpdump` will start capturing traffic and writing it to the file `tcp_conn.pcap` .
+  -  `tcpdump` will start capturing traffic and writing it to the file `arp_spoofing.pcap` .
 
 
 - On another terminal connected to the Ubuntu VM, run: 
   ```
-  sudo zeek -i eth0
+  start_attack_logging arp_spoofing
   ```
-  - This will run Zeek on the **eth0** interface.
-  - Zeek passively monitors the network interface.
-  - It will start logging immediately in the default directory (`/opt/zeek/logs/current/`).
+  **What this does:**
+   * `start_attack_logging` → is a **custom script** provisioned with Ansible during setup.
+   * It automatically creates a dedicated folder for each attack under `~/zeek-logs/`.
+   * For example: `~/zeek-logs/arp_spoofing/` will contain all logs generated while monitoring that attack.
 
-- To see the log as it grows on real time, we can run on another terminal:
-  ```
-  tail -f /opt/zeek/logs/current/conn.log
-  ```
+   Inside, the script launches **Zeek** with: 
+   ```
+    sudo zeek -i eth0 -C local
+   ```
+  
+    * `-i eth0` → tells Zeek to monitor traffic on the **eth0** interface. 
+    * `-C` → disables checksum validation, useful in lab environments where packet captures may have bad checksums.
+    * `local` → runs Zeek using the default local configuration, which loads common protocol analyzers and policies.
+
+  * Instead of saving raw packets like `tcpdump`, Zeek **analyzes the traffic in real time** and produces structured log files:
+     * `conn.log` → summary of every connection observed. 
+     * `dns.log`, `ssh.log`, `http.log`, etc. → protocol-specific activity.
+    * `notice.log` → warnings or suspicious behaviors detected.
+
+  * The benefit of this approach is that **each attack gets its own log directory**, making it easy to review later without mixing results from different experiments.
+
+
 ##
 
 ### 🤝 TCP Handshake 
-To understand how TCP Connect and SYN scans work (and SYN Floods, the attack we´ll perform afterwards), it’s important to know how a typical TCP connection is established.
+Before diving into the attacks we’ll perform, it’s important to understand how a typical **TCP connection** is established, since several techniques in our project rely on manipulating or abusing this process.
 
-It´s purpose is to establish a reliable connection between a client and a server to ensure that both sides are ready to communicate before any data is transmitted. This process is also known as the **3-way handshake**:
+The goal of the handshake is to establish a **reliable connection** between a client and a server, ensuring that both sides are synchronized before data transmission begins. This is known as the **3-way handshake**:
 
 **1. SYN (Synchronize)  →** The client sends a SYN packet to the server to request a connection.
    
@@ -117,7 +149,7 @@ It´s purpose is to establish a reliable connection between a client and a serve
    
 **3.  ACK (Acknowledge) →** The client sends back an ACK, acknowledging the server's SYN-ACK to complete the handshake. Both client and server are now aware of the connection and ready to transmit data.
 
-💡 If any of these steps fail, the connection does not fully establish. This behavior is what scanners like nmap exploit to detect open, closed, or filtered ports.
+💡 If any of these steps fail, the connection does not fully establish.
 
 ##
 ### 🕵️ 1. ARP Spoofing / Man-in-the-Middle (MITM) using Arpspoof
@@ -1223,3 +1255,69 @@ tshark -r dns-exfil.pcap -Y "dns.qry.name contains berrysafe.com" -T fields -e f
 #### Interpreting the Output: 
 
 The screenshot below shows several DNS queries from IP `10.0.1.5` (the **victim**) to `berrysafe.com`, including its subdomains like `auth.berrysafe.com`, `connect.berrysafe.com`, and `berrysafe.com`.
+
+##
+
+### 🛡️ Defense Strategies
+
+
+While the goal of this lab is to simulate and understand common attacks, in real-world environments the focus must always be on **prevention and detection**. Each technique demonstrated here can be mitigated with proper security controls. Below are simple but effective defense strategies for the attacks we carried out:
+
+* **ARP Spoofing:**
+  * **Packet monitoring and detection:** Tools like **Zeek** or **arpwatch** can flag when two different IPs are claiming the same MAC address, or when one MAC address is suddenly associated with multiple IPs.
+
+  * **Encryption of communications:** Even if an attacker succeeds in redirecting traffic, using protocols like SSH, HTTPS, or VPN ensures that intercepted data remains unreadable and tamper-proof.
+
+* **SSH Brute Force:**
+   * **Strong authentication policies:** Enforcing complex passwords or, ideally, requiring SSH keys makes brute force attempts virtually impossible.
+
+   * **Account lockouts or fail2ban:** Tools like _fail2ban_ block IPs that generate too many failed login attempts, slowing or stopping brute force attacks.
+
+* **Reverse Shell:**
+   * **Outbound traffic restrictions:** Firewalls can block unauthorized connections from internal hosts to the internet, cutting off reverse shells.
+   
+   * **Endpoint monitoring (EDR):** Security tools can flag unusual processes (e.g., a shell suddenly opening a network connection) and alert administrators.
+
+* **DNS Tunneling:** 
+  * **Traffic analysis with IDS/Zeek:** Monitoring DNS queries can reveal anomalies, such as unusually long domain names or high-frequency queries, which are indicators of tunneling.
+
+  * **Restricting DNS usage:** Forcing all clients to resolve queries through trusted, internal DNS resolvers prevents direct communication with external attacker-controlled servers.
+
+
+##
+
+### Conclusion
+
+This project demonstrated how common network attacks, such as: ARP spoofing, brute force attempts, reverse shells, and DNS tunneling, can be executed and, more importantly, how they can be detected and mitigated. By combining offensive tools (to simulate the attacker’s perspective) with defensive monitoring (tcpdump, Zeek, Wireshark), we gained a deeper understanding of both sides of the cybersecurity landscape.
+
+Ultimately, the goal of this lab is not just to replicate attacks, but to build awareness of how they operate and how layered defenses can stop them. This mindset—_thinking like an attacker to defend like a professional_—is essential in real-world cybersecurity.
+
+
+## 
+### References / Further Reading
+
+**ARP Spoofing**
+ * [ARP Spoofing - Explained](https://www.imperva.com/learn/application-security/arp-spoofing/) – Overview of ARP spoofing, its impact, and prevention methods.
+
+**SSH Brute Force (Hydra)** 
+  * [THC Hydra GitHub](https://github.com/vanhauser-thc/thc-hydra) – Official repository and usage examples.
+  * [Brute Force Attacks](https://www.imperva.com/learn/application-security/brute-force-attack/) – Explains Brute Force attacks, Hydra and other Brute Force attack tools.
+
+
+**Reverse Shell (Netcat)** 
+  * [Netcat Tutorial](https://nmap.org/ncat/) – Guide to Netcat usage, including reverse shells.
+  * [Reverse Shell - How it Works](https://www.imperva.com/learn/application-security/reverse-shell/) – Explains how Reverse Shells work and how to prevent them.
+
+  **DNS Tunneling (dns2tcp)** 
+  * [DNS Tunneling Explained](https://www.cloudns.net/blog/dns-tunneling-attack-what-is-it-and-how-to-protect-ourselves/) – How DNS tunneling works and how to detect it. 
+  * [dns2tcp Explained](https://blogs.infoblox.com/community/analysis-on-popular-dns-tunneling-tools/) – Analysis on Popular DNS Tunneling Tools
+
+ **Monitoring Tools** 
+  * [Zeek Documentation](https://docs.zeek.org/en/current/) – Official Zeek documentation and log explanations.
+  * [Wireshark User Guide](https://www.wireshark.org/docs/wsug_html_chunked/?) – Detailed guide on packet analysis.
+  * [Tcpdump Manual](https://www.tcpdump.org/manpages/tcpdump.1.html) – Reference for command-line packet capture.
+
+
+
+
+
