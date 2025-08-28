@@ -226,6 +226,18 @@ graph TD
 
 - Azure subscription
 - A service principal with Contributor role.
+- Acceptance of the Kali Linux image in Azure Marketplace.
+  - Before deploying the lab, you must accept the terms of the Kali Linux image in Azure Marketplace to allow programmatic deployment.
+  - The specific image used in the Terraform configuration (`main.tf`) is: **kali 2025.2.0**
+  - You can accept the image terms either via the Azure Portal or CLI:
+
+   ```
+   az vm image terms accept \
+    --publisher kali-linux \
+    --offer kali \
+    --plan kali-2025-2
+   ```
+
 - An SSH Key Pair.
   - Store the private key securely in GitHub Secrets (`SSH_PRIVATE_KEY`).
   - Repalce the public key in `terraform.tfvars` with the new matching key.
@@ -238,6 +250,7 @@ graph TD
   - `SSH_PRIVATE_KEY` (the private key matching the public key in `terraform.tfvars`)
 
 ---
+
 
 ### 🧪 Create the lab
 
